@@ -1,0 +1,224 @@
+body {
+    margin: 0;
+    background-color: #101010;
+    color: #ffffff;
+    font-size: 13px;
+    font-family: Roboto, Arial, sans-serif;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+#loader {
+    padding: 8px 20px;
+    background-color: #5050A0;
+
+    input {
+        width: 100%;
+    }
+}
+
+#error {
+    display: none;
+    position: absolute;
+    z-index: 1000;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 8px 20px;
+    background-color: #803030;
+
+    &.show {
+        display: block;
+    }
+}
+
+#chat {
+    padding: 8px 20px;
+}
+
+.item {
+    padding-bottom: 2px;
+    margin-top: 2px;
+    display: flex;
+    align-items: flex-start;
+    column-gap: 5px;
+    border-bottom: 1px solid #303030;
+
+    &:last-child {
+        border-bottom: 0 none;
+    }
+}
+
+.time {
+    display: block;
+    padding: 2px 5px;
+    width: 55px;
+    min-height: 20px;
+    line-height: 20px;
+    color: #a0a0a0;
+    text-align: right;
+}
+
+.user {
+    display: block;
+    padding: 2px 5px;
+    width: 200px;
+    min-height: 20px;
+    line-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: bold;
+    color: #c0c0c0;
+
+    &.mem {
+        color: #2ba640;
+    }
+    &.mod {
+        color: #5e84f1;
+    }
+    &.owner {
+        background-color: #ffd600;
+        color: #0f0f0f;
+        border-radius: 6px;
+    }
+}
+
+.msg {
+    display: block;
+    padding: 2px 5px;
+    min-height: 20px;
+    line-height: 20px;
+
+    .money, .mem-length, .gift-icon {
+        display: inline-block;
+        font-weight: bold;
+        padding: 2px 5px;
+        margin-right: 8px;
+        border-radius: 6px;
+    }
+
+    &.superchat, &.super-sticker {
+        padding: 0 5px 0 0;
+        border-radius: 6px;
+
+        .text {
+            display: inline-block;
+            padding: 2px 0;
+        }
+
+        &.dark-blue {
+            background-color: rgb(21, 101, 192);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(21, 101, 192);
+            }
+        }
+        &.light-blue {
+            background-color: rgb(0, 229, 255);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(0, 184, 212);
+            }
+        }
+        &.light-green {
+            background-color: rgb(29, 233, 182);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(0, 191, 165);
+            }
+        }
+        &.yellow {
+            background-color: rgb(255, 202, 40);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(255, 179, 0);
+            }
+        }
+        &.orange {
+            background-color: rgb(245, 124, 0);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(230, 81, 0);
+            }
+        }
+        &.pink {
+            background-color: rgb(233, 30, 99);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(194, 24, 91);
+            }
+        }
+        &.red {
+            background-color: rgb(230, 33, 23);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(208, 0, 0);
+            }
+        }
+        &.unknown {
+            background-color: rgb(200, 200, 200);
+            color: #0f0f0f;
+
+            .money {
+                background-color: rgb(170, 170, 170);
+            }
+        }
+    }
+
+    &.system-message {
+        font-style: italic;
+    }
+
+    &.membership-join {
+        background-color: #0a8043;
+        border-radius: 6px;
+    }
+
+    &.membership-message {
+        background-color: #0f9d58;
+        padding: 0 5px 0 0;
+        border-radius: 6px;
+
+        .mem-length {
+            background-color: #0a8043;
+        }
+    }
+
+    &.membership-received {
+        color: #a0a0a0;
+    }
+
+    &.membership-gift {
+        background-color: #0f9d58;
+        padding: 0 5px 0 0;
+        border-radius: 6px;
+
+        .gift-icon {
+            font-style: normal;
+            background-color: #0a8043;
+        }
+    }
+
+    .emoji {
+        width: 20px;
+        height: 20px;
+        vertical-align: top;
+    }
+
+    .sticker {
+        width: 36px;
+        height: 36px;
+        vertical-align: top;
+    }
+}

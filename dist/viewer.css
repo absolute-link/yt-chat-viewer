@@ -1,0 +1,158 @@
+body {
+  margin: 0;
+  background-color: #101010;
+  color: #ffffff;
+  font-size: 13px;
+  font-family: Roboto, Arial, sans-serif; }
+
+a {
+  color: inherit;
+  text-decoration: none; }
+
+#loader {
+  padding: 8px 20px;
+  background-color: #5050A0; }
+  #loader input {
+    width: 100%; }
+
+#error {
+  display: none;
+  position: absolute;
+  z-index: 1000;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 20px;
+  background-color: #803030; }
+  #error.show {
+    display: block; }
+
+#chat {
+  padding: 8px 20px; }
+
+.item {
+  padding-bottom: 2px;
+  margin-top: 2px;
+  display: flex;
+  align-items: flex-start;
+  column-gap: 5px;
+  border-bottom: 1px solid #303030; }
+  .item:last-child {
+    border-bottom: 0 none; }
+
+.time {
+  display: block;
+  padding: 2px 5px;
+  width: 55px;
+  min-height: 20px;
+  line-height: 20px;
+  color: #a0a0a0;
+  text-align: right; }
+
+.user {
+  display: block;
+  padding: 2px 5px;
+  width: 200px;
+  min-height: 20px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: bold;
+  color: #c0c0c0; }
+  .user.mem {
+    color: #2ba640; }
+  .user.mod {
+    color: #5e84f1; }
+  .user.owner {
+    background-color: #ffd600;
+    color: #0f0f0f;
+    border-radius: 6px; }
+
+.msg {
+  display: block;
+  padding: 2px 5px;
+  min-height: 20px;
+  line-height: 20px; }
+  .msg .money, .msg .mem-length, .msg .gift-icon {
+    display: inline-block;
+    font-weight: bold;
+    padding: 2px 5px;
+    margin-right: 8px;
+    border-radius: 6px; }
+  .msg.superchat, .msg.super-sticker {
+    padding: 0 5px 0 0;
+    border-radius: 6px; }
+    .msg.superchat .text, .msg.super-sticker .text {
+      display: inline-block;
+      padding: 2px 0; }
+    .msg.superchat.dark-blue, .msg.super-sticker.dark-blue {
+      background-color: #1565c0;
+      color: #0f0f0f; }
+      .msg.superchat.dark-blue .money, .msg.super-sticker.dark-blue .money {
+        background-color: #1565c0; }
+    .msg.superchat.light-blue, .msg.super-sticker.light-blue {
+      background-color: #00e5ff;
+      color: #0f0f0f; }
+      .msg.superchat.light-blue .money, .msg.super-sticker.light-blue .money {
+        background-color: #00b8d4; }
+    .msg.superchat.light-green, .msg.super-sticker.light-green {
+      background-color: #1de9b6;
+      color: #0f0f0f; }
+      .msg.superchat.light-green .money, .msg.super-sticker.light-green .money {
+        background-color: #00bfa5; }
+    .msg.superchat.yellow, .msg.super-sticker.yellow {
+      background-color: #ffca28;
+      color: #0f0f0f; }
+      .msg.superchat.yellow .money, .msg.super-sticker.yellow .money {
+        background-color: #ffb300; }
+    .msg.superchat.orange, .msg.super-sticker.orange {
+      background-color: #f57c00;
+      color: #0f0f0f; }
+      .msg.superchat.orange .money, .msg.super-sticker.orange .money {
+        background-color: #e65100; }
+    .msg.superchat.pink, .msg.super-sticker.pink {
+      background-color: #e91e63;
+      color: #0f0f0f; }
+      .msg.superchat.pink .money, .msg.super-sticker.pink .money {
+        background-color: #c2185b; }
+    .msg.superchat.red, .msg.super-sticker.red {
+      background-color: #e62117;
+      color: #0f0f0f; }
+      .msg.superchat.red .money, .msg.super-sticker.red .money {
+        background-color: #d00000; }
+    .msg.superchat.unknown, .msg.super-sticker.unknown {
+      background-color: #c8c8c8;
+      color: #0f0f0f; }
+      .msg.superchat.unknown .money, .msg.super-sticker.unknown .money {
+        background-color: #aaaaaa; }
+  .msg.system-message {
+    font-style: italic; }
+  .msg.membership-join {
+    background-color: #0a8043;
+    border-radius: 6px; }
+  .msg.membership-message {
+    background-color: #0f9d58;
+    padding: 0 5px 0 0;
+    border-radius: 6px; }
+    .msg.membership-message .mem-length {
+      background-color: #0a8043; }
+  .msg.membership-received {
+    color: #a0a0a0; }
+  .msg.membership-gift {
+    background-color: #0f9d58;
+    padding: 0 5px 0 0;
+    border-radius: 6px; }
+    .msg.membership-gift .gift-icon {
+      font-style: normal;
+      background-color: #0a8043; }
+  .msg .emoji {
+    width: 20px;
+    height: 20px;
+    vertical-align: top; }
+  .msg .sticker {
+    width: 36px;
+    height: 36px;
+    vertical-align: top; }
+
+/*# sourceMappingURL=viewer.css.map */

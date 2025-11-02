@@ -205,9 +205,6 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: enter absolute timestamps, and allow choosing the type to display
 
-    // TODO: pagination for excessively long chats
-        // don't paginate if the total chats are less than 1.2x the chosen limit
-
     // TODO: allow loading from a URL (e.g. Google Drive link), instead of just from a file
         // accept an encoded URL in query string param, so that chats can be bookmarked or even shared directly
 

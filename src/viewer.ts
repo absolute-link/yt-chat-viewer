@@ -8,7 +8,7 @@ const APP: AppState = {
     loadedFile: '',
     htmlLines: [],
     currentPage: 1,
-    limitPerPage: 1000,
+    limitPerPage: 1500,
     runningStats: freshRunningStats(),
     userStats: freshUserStats(),
     aggregateStats: freshAggregateStats(),
@@ -68,17 +68,50 @@ function displayChat() {
     const container = document.getElementById('chat');
     if (!container) return;
 
-    for (const line of APP.htmlLines) {
+    container.innerHTML = '';
+    scrollTo(0, 0);
+
+    const startIdx = (APP.currentPage - 1) * APP.limitPerPage;
+    const endIdx = startIdx + APP.limitPerPage;
+
+    for (let idx = startIdx; idx < endIdx && idx < APP.htmlLines.length; idx++) {
         const itemEl = document.createElement('div');
         itemEl.className = 'item';
-        itemEl.innerHTML = line;
+        itemEl.innerHTML = APP.htmlLines[idx];
 
         container.appendChild(itemEl);
     }
+    updatePageIndicator();
+}
 
-    console.log(APP.runningStats);
-    console.log(APP.aggregateStats);
-    console.log(APP.userStats);
+function getMaxPages(): number {
+    return Math.ceil(APP.htmlLines.length / APP.limitPerPage);
+}
+
+function changePage(delta: number) {
+    console.log(getMaxPages());
+    if (delta > 0 && APP.currentPage >= getMaxPages()) return;
+    if (delta < 0 && APP.currentPage <= 1) return;
+
+    APP.currentPage += delta;
+    displayChat();
+}
+
+function prevPage() {
+    console.log('prev page');
+    changePage(-1);
+}
+
+function nextPage() {
+    console.log('next page');
+    changePage(1);
+}
+
+function updatePageIndicator() {
+    const indicator = document.getElementById('page-indicator');
+    if (!indicator) return;
+
+    indicator.textContent = `Page ${APP.currentPage}/${getMaxPages()}`;
 }
 
 async function processJsonFile(fileObj: File) {
@@ -105,6 +138,14 @@ async function processJsonFile(fileObj: File) {
     const filePicker = document.getElementById('json-file');
     if (!filePicker || !(filePicker instanceof HTMLInputElement)) throw new Error('File element not found');
 
+    const prevPageBtn = document.getElementById('prev-page');
+    if (!prevPageBtn || !(prevPageBtn instanceof HTMLButtonElement)) throw new Error('Prev page button not found');
+    prevPageBtn.addEventListener('click', prevPage, false);
+
+    const nextPageBtn = document.getElementById('next-page');
+    if (!nextPageBtn || !(nextPageBtn instanceof HTMLButtonElement)) throw new Error('Next page button not found');
+    nextPageBtn.addEventListener('click', nextPage, false);
+
     filePicker.addEventListener('change', () => {
         clearChat();
         clearErrorMsg();
@@ -114,6 +155,10 @@ async function processJsonFile(fileObj: File) {
         if (file.type !== 'application/json') return setErrorMsg('Error: Please choose a JSON file');
 
         processJsonFile(file).then(displayChat);
+
+        console.log(APP.runningStats);
+        console.log(APP.aggregateStats);
+        console.log(APP.userStats);
     }, false);
 })().catch((err) => {
     if (!err) return;

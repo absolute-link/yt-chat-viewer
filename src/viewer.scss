@@ -12,8 +12,24 @@ a {
 }
 
 #loader, #controls {
+    position: fixed;
+    left: 0;
+    right: 0;
     padding: 8px 20px;
     background-color: #5050A0;
+}
+
+#loader {
+    top: 0;
+}
+
+#controls {
+    bottom: 0;
+    display: flex;
+
+    .left {
+        flex-grow: 1;
+    }
 }
 
 #loader input {

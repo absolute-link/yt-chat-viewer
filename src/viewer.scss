@@ -11,13 +11,13 @@ a {
     text-decoration: none;
 }
 
-#loader {
+#loader, #controls {
     padding: 8px 20px;
     background-color: #5050A0;
+}
 
-    input {
-        width: 100%;
-    }
+#loader input {
+    width: 100%;
 }
 
 #error {

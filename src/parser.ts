@@ -4,6 +4,7 @@ import { User } from './interfaces/general';
 import { AppState } from './interfaces/state';
 import {
     AuthorInfo,
+    SuperchatValue,
     RawBadge,
     RawChatEvent,
     RawEmoji,
@@ -81,6 +82,19 @@ function simplifyText(textData: RawTextData | string) {
     }
 
     return '';
+}
+
+function superchatValueFromRaw(textData: RawTextData): SuperchatValue {
+    const text = simplifyText(textData);
+    const match = text.match(/^([^0-9.,]*)([0-9.,]+)/);
+    if (match) return {
+        currencyLabel: (match[1] || 'Unknown').trim(),
+        amount: parseFloat(match[2].trim()),
+    };
+    return {
+        currencyLabel: 'Unknown',
+        amount: 0.0,
+    };
 }
 
 function userFromAuthorInfo(author: AuthorInfo) {
@@ -163,9 +177,7 @@ function makeMemberMessageSpan(lengthText: RawTextData, message: RawTextData) {
     return html;
 }
 
-function makeSuperchatSpan(renderer: RawSuperchatRenderer) {
-    const scColour = colourClassFromRaw(renderer.bodyBackgroundColor);
-
+function makeSuperchatSpan(renderer: RawSuperchatRenderer, scColour: string) {
     let html = `<span class="msg superchat ${scColour}">`;
     html += `<span class="money">${simplifyText(renderer.purchaseAmountText)}</span>`;
     if (renderer.message) html += `<span class="text">${simplifyText(renderer.message)}</span>`;
@@ -237,12 +249,21 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         }
     } else if (actionItem.liveChatPaidMessageRenderer) {
         const renderer = actionItem.liveChatPaidMessageRenderer;
+        const scColour = colourClassFromRaw(renderer.bodyBackgroundColor);
+        const { currencyLabel, amount: superchatValue } = superchatValueFromRaw(renderer.purchaseAmountText);
         user = userFromAuthorInfo(renderer);
-        msgSpanHtml += makeSuperchatSpan(renderer);
+        msgSpanHtml += makeSuperchatSpan(renderer, scColour);
+
+        app.runningStats.numSuperchats++;
+        if (!app.runningStats.colourTotals[scColour]) app.runningStats.colourTotals[scColour] = 0;
+        app.runningStats.colourTotals[scColour]++;
+        if (!app.runningStats.currencyTotals[currencyLabel]) app.runningStats.currencyTotals[currencyLabel] = 0.0;
+        app.runningStats.currencyTotals[currencyLabel] += superchatValue;
     } else if (actionItem.liveChatPaidStickerRenderer) {
         const renderer = actionItem.liveChatPaidStickerRenderer;
         user = userFromAuthorInfo(renderer);
         msgSpanHtml += makeStickerSpan(renderer);
+        app.runningStats.numSuperStickers++;
     } else if (actionItem.liveChatTextMessageRenderer) {
         const renderer = actionItem.liveChatTextMessageRenderer;
         user = userFromAuthorInfo(renderer);

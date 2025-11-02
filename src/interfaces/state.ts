@@ -11,6 +11,12 @@ export interface AppRunningStats {
     numMilestoneMessages: number;
     numSuperchats: number;
     numSuperStickers: number;
+    colourTotals: {
+        [colour: string]: number;
+    };
+    currencyTotals: {
+        [currency: string]: number;
+    };
 }
 
 export interface AppUserStats {

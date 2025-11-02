@@ -28,6 +28,16 @@ function freshRunningStats(): AppRunningStats {
         numMilestoneMessages: 0,
         numSuperchats: 0,
         numSuperStickers: 0,
+        colourTotals: {
+            'red': 0,
+            'pink': 0,
+            'orange': 0,
+            'yellow': 0,
+            'light-green': 0,
+            'light-blue': 0,
+            'blue': 0,
+        },
+        currencyTotals: {},
     };
 }
 

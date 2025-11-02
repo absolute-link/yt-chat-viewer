@@ -53,6 +53,11 @@ export interface AuthorInfo {
     }
 }
 
+export interface SuperchatValue {
+    currencyLabel: string;
+    amount: number;
+}
+
 export interface RawMessageRenderer extends AuthorInfo {
     id: string;
     message?: RawTextData;

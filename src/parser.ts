@@ -177,7 +177,7 @@ function makeMemberMessageSpan(lengthText: RawTextData, message: RawTextData) {
     return html;
 }
 
-function makeSuperchatSpan(renderer: RawSuperchatRenderer, scColour: string) {
+function makeSuperChatSpan(renderer: RawSuperchatRenderer, scColour: string) {
     let html = `<span class="msg superchat ${scColour}">`;
     html += `<span class="money">${simplifyText(renderer.purchaseAmountText)}</span>`;
     if (renderer.message) html += `<span class="text">${simplifyText(renderer.message)}</span>`;
@@ -205,6 +205,10 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: enter absolute timestamps, and allow choosing the type to display
 
+    // TODO: for each custom emote found, load it ahead of time so the browser can cache it
+
+    // TODO: add filtering by message type, and searching by text/username contents
+
     // TODO: allow loading from a URL (e.g. Google Drive link), instead of just from a file
         // accept an encoded URL in query string param, so that chats can be bookmarked or even shared directly
 
@@ -220,7 +224,13 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         // superchat totals (number, per colour, totals per currency), maybe a button to use JS to reach out to an API to calculate it all in USD
 
     let user: User;
+    let textContent = '';
     let msgSpanHtml = '';
+    let isSuperChat = false;
+    let isSuperSticker = false;
+    let isMembershipMessage = false;
+    let isMembershipGift = false;
+    let isMembershipRedemption = false;
 
     if (actionItem.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer) {
         const topRenderer = actionItem.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer;
@@ -229,42 +239,50 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         const giftCount = parseInt((subRenderer.primaryText.runs || [])[1].text || '0');
         user = userFromAuthorInfo(subRenderer);
         msgSpanHtml += makeGiftMessageSpan(subRenderer.primaryText);
+        isMembershipGift = true;
         app.runningStats.numGiftPurchases++;
         app.runningStats.totalGiftsPurchased += giftCount;
     } else if (actionItem.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer) {
         const renderer = actionItem.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
         user = userFromAuthorInfo(renderer);
         msgSpanHtml += makeMessageSpan(renderer.message, ['membership-received', 'system-message']);
+        isMembershipRedemption = true;
     } else if (actionItem.liveChatMembershipItemRenderer) {
         const renderer = actionItem.liveChatMembershipItemRenderer;
         user = userFromAuthorInfo(renderer);
         if (renderer.message) {
             // TODO: what does it look like if someone sends one without a message?
             msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.message);
+            textContent = simplifyText(renderer.message);
         } else {
             msgSpanHtml += makeMessageSpan(renderer.headerSubtext, ['membership-join', 'system-message']);
         }
+        isMembershipMessage = true;
     } else if (actionItem.liveChatPaidMessageRenderer) {
         const renderer = actionItem.liveChatPaidMessageRenderer;
         const scColour = colourClassFromRaw(renderer.bodyBackgroundColor);
-        const { currencyLabel, amount: superchatValue } = superchatValueFromRaw(renderer.purchaseAmountText);
+        const { currencyLabel, amount: superChatValue } = superchatValueFromRaw(renderer.purchaseAmountText);
         user = userFromAuthorInfo(renderer);
-        msgSpanHtml += makeSuperchatSpan(renderer, scColour);
+        msgSpanHtml += makeSuperChatSpan(renderer, scColour);
+        isSuperChat = true;
+        textContent = simplifyText(renderer.message || '');
 
         app.runningStats.numSuperchats++;
         if (!app.runningStats.colourTotals[scColour]) app.runningStats.colourTotals[scColour] = 0;
         app.runningStats.colourTotals[scColour]++;
         if (!app.runningStats.currencyTotals[currencyLabel]) app.runningStats.currencyTotals[currencyLabel] = 0.0;
-        app.runningStats.currencyTotals[currencyLabel] += superchatValue;
+        app.runningStats.currencyTotals[currencyLabel] += superChatValue;
     } else if (actionItem.liveChatPaidStickerRenderer) {
         const renderer = actionItem.liveChatPaidStickerRenderer;
         user = userFromAuthorInfo(renderer);
         msgSpanHtml += makeStickerSpan(renderer);
         app.runningStats.numSuperStickers++;
+        isSuperSticker = true;
     } else if (actionItem.liveChatTextMessageRenderer) {
         const renderer = actionItem.liveChatTextMessageRenderer;
         user = userFromAuthorInfo(renderer);
         msgSpanHtml += makeMessageSpan(renderer.message);
+        textContent = simplifyText(renderer.message || '');
     } else {
         return false;
     }
@@ -274,8 +292,20 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
     lineHtml += makeUserSpan(user);
     lineHtml += msgSpanHtml;
 
-    app.htmlLines.push(lineHtml);
-    app.runningStats.numChatMessages++;
+    app.allChats.push({
+        isMember: user.isMember,
+        isMod: user.isMod,
+        isOwner: user.isOwner,
+        isSuperChat,
+        isSuperSticker,
+        isMembershipMessage,
+        isMembershipGift,
+        isMembershipRedemption,
+        userName: user.name,
+        textContent,
+        htmlLine: lineHtml,
+    });
 
+    app.runningStats.numChatMessages++;
     return true;
 }

@@ -21,6 +21,19 @@
                 <span id="page-indicator">Page 1/1</span>
                 <button id="next-page" title="Next Page">&gt;</button>
             </div>
+            <div class="middle">
+                <form id="filter-form" onsubmit="return false;">
+                <span>Show</span>
+                <select id="filter-type">
+                    <option value="" selected>All Messages</option>
+                    <option value="moderators">Mods / Owner Chats</option>
+                    <option value="monetized">Monetized Messages</option>
+                </select>
+                <span>containing</span>
+                <input id="search-text" type="text" />
+                <button type="submit" id="apply-filters" title="Apply Filters">Apply</button>
+                </form>
+            </div>
             <div class="right">
                 <button id="stats" title="Stats">Show Stats</button>
             </div>

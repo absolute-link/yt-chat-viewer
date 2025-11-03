@@ -40,9 +40,24 @@ export interface AppAggregateStats {
     pctMemberChats: number;
 }
 
+export interface ParsedChat {
+    isMember: boolean;
+    isMod: boolean;
+    isOwner: boolean;
+    isSuperChat: boolean;
+    isSuperSticker: boolean;
+    isMembershipMessage: boolean;
+    isMembershipGift: boolean;
+    isMembershipRedemption: boolean;
+    userName: string;
+    textContent: string;
+    htmlLine: string;
+}
+
 export interface AppState {
     loadedFile: string;
-    htmlLines: string[];
+    allChats: ParsedChat[];
+    filteredChats: ParsedChat[];
     currentPage: number;
     limitPerPage: number;
     runningStats: AppRunningStats;

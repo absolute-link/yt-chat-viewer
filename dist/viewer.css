@@ -1,5 +1,4 @@
 body {
-  margin: 0;
   background-color: #101010;
   color: #ffffff;
   font-size: 13px;
@@ -21,9 +20,8 @@ a {
 
 #controls {
   bottom: 0;
-  display: flex; }
-  #controls .left {
-    flex-grow: 1; }
+  display: flex;
+  justify-content: space-between; }
 
 #loader input {
   width: 100%; }
@@ -41,6 +39,7 @@ a {
     display: block; }
 
 #chat {
+  margin: 36px 0;
   padding: 8px 20px; }
 
 .item {

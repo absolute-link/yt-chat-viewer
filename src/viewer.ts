@@ -6,7 +6,8 @@ import { processChatMessage } from './parser';
 
 const APP: AppState = {
     loadedFile: '',
-    htmlLines: [],
+    allChats: [],
+    filteredChats: [],
     currentPage: 1,
     limitPerPage: 1500,
     runningStats: freshRunningStats(),
@@ -55,13 +56,47 @@ function freshAggregateStats(): AppAggregateStats {
 
 function clearChat() {
     APP.loadedFile = '';
-    APP.htmlLines = [];
+    APP.allChats = [];
+    APP.filteredChats = [];
+    APP.currentPage = 1;
     APP.runningStats = freshRunningStats();
     APP.userStats = freshUserStats();
     APP.aggregateStats = freshAggregateStats();
 
     const container = document.getElementById('chat');
     if (container) container.innerHTML = '';
+}
+
+function filterChat(evt: Event) {
+    evt.preventDefault();
+
+    const typeDropdown = document.getElementById('filter-type');
+    if (!typeDropdown || !(typeDropdown instanceof HTMLSelectElement)) throw new Error('Filter type dropdown not found');
+
+    const textSearchBox = document.getElementById('search-text');
+    if (!textSearchBox || !(textSearchBox instanceof HTMLInputElement)) throw new Error('Search text box not found');
+
+    const searchText = textSearchBox.value.toLowerCase();
+    APP.filteredChats = APP.allChats.filter((chat) => {
+        if (typeDropdown.value === 'moderators') {
+            if (!chat.isMod && !chat.isOwner) return false;
+        }
+        if (typeDropdown.value === 'monetized') {
+            if (!chat.isSuperChat
+                && !chat.isSuperSticker
+                && !chat.isMembershipGift
+                && !chat.isMembershipRedemption
+                && !chat.isMembershipMessage
+            ) return false;
+        }
+        if (searchText === '') return true;
+        return (chat.textContent.toLowerCase().includes(searchText)
+            || chat.userName.toLowerCase().includes(searchText)
+        );
+    });
+
+    APP.currentPage = 1;
+    displayChat();
 }
 
 function displayChat() {
@@ -74,10 +109,10 @@ function displayChat() {
     const startIdx = (APP.currentPage - 1) * APP.limitPerPage;
     const endIdx = startIdx + APP.limitPerPage;
 
-    for (let idx = startIdx; idx < endIdx && idx < APP.htmlLines.length; idx++) {
+    for (let idx = startIdx; idx < endIdx && idx < APP.filteredChats.length; idx++) {
         const itemEl = document.createElement('div');
         itemEl.className = 'item';
-        itemEl.innerHTML = APP.htmlLines[idx];
+        itemEl.innerHTML = APP.filteredChats[idx].htmlLine;
 
         container.appendChild(itemEl);
     }
@@ -85,11 +120,10 @@ function displayChat() {
 }
 
 function getMaxPages(): number {
-    return Math.ceil(APP.htmlLines.length / APP.limitPerPage);
+    return Math.ceil(APP.filteredChats.length / APP.limitPerPage);
 }
 
 function changePage(delta: number) {
-    console.log(getMaxPages());
     if (delta > 0 && APP.currentPage >= getMaxPages()) return;
     if (delta < 0 && APP.currentPage <= 1) return;
 
@@ -98,12 +132,10 @@ function changePage(delta: number) {
 }
 
 function prevPage() {
-    console.log('prev page');
     changePage(-1);
 }
 
 function nextPage() {
-    console.log('next page');
     changePage(1);
 }
 
@@ -132,6 +164,8 @@ async function processJsonFile(fileObj: File) {
             console.error(err);
         }
     }
+
+    APP.filteredChats = APP.allChats.slice();
 }
 
 (async () => {
@@ -145,6 +179,10 @@ async function processJsonFile(fileObj: File) {
     const nextPageBtn = document.getElementById('next-page');
     if (!nextPageBtn || !(nextPageBtn instanceof HTMLButtonElement)) throw new Error('Next page button not found');
     nextPageBtn.addEventListener('click', nextPage, false);
+
+    const filtersForm = document.getElementById('filter-form');
+    if (!filtersForm || !(filtersForm instanceof HTMLFormElement)) throw new Error('Filters form not found');
+    filtersForm.addEventListener('submit', filterChat, false);
 
     filePicker.addEventListener('change', () => {
         clearChat();

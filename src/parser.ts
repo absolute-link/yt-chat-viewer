@@ -23,8 +23,8 @@ interface ColourCache {
 function colourClassFromRaw(backgroundColor: number) {
     const colourStr = backgroundColor.toString();
     const cache: ColourCache = {
-        '4279592384': 'dark-blue', // header/sticker
-        '4280191205': 'dark-blue', // body
+        '4279592384': 'blue', // header/sticker
+        '4280191205': 'blue', // body
         '4278237396': 'light-blue', // header/sticker
         '4278248959': 'light-blue', // body
         '4278239141': 'light-green', // header/sticker
@@ -186,8 +186,7 @@ function makeSuperChatSpan(renderer: RawSuperchatRenderer, scColour: string) {
     return html;
 }
 
-function makeStickerSpan(renderer: RawSuperStickerRenderer) {
-    const scColour = colourClassFromRaw(renderer.backgroundColor);
+function makeStickerSpan(renderer: RawSuperStickerRenderer, scColour: string) {
     const thumbnail = smallestThumbnail(renderer.sticker.thumbnails);
     const alt = renderer.sticker.accessibility.accessibilityData.label;
 
@@ -206,8 +205,6 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
     // TODO: enter absolute timestamps, and allow choosing the type to display
 
     // TODO: for each custom emote found, load it ahead of time so the browser can cache it
-
-    // TODO: add filtering by message type, and searching by text/username contents
 
     // TODO: allow loading from a URL (e.g. Google Drive link), instead of just from a file
         // accept an encoded URL in query string param, so that chats can be bookmarked or even shared directly
@@ -254,8 +251,10 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
             // TODO: what does it look like if someone sends one without a message?
             msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.message);
             textContent = simplifyText(renderer.message);
+            app.runningStats.numMilestoneMessages++;
         } else {
             msgSpanHtml += makeMessageSpan(renderer.headerSubtext, ['membership-join', 'system-message']);
+            app.runningStats.numMembershipJoins++;
         }
         isMembershipMessage = true;
     } else if (actionItem.liveChatPaidMessageRenderer) {
@@ -274,10 +273,16 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         app.runningStats.currencyTotals[currencyLabel] += superChatValue;
     } else if (actionItem.liveChatPaidStickerRenderer) {
         const renderer = actionItem.liveChatPaidStickerRenderer;
+        const scColour = colourClassFromRaw(renderer.backgroundColor);
+        const { currencyLabel, amount: superChatValue } = superchatValueFromRaw(renderer.purchaseAmountText);
         user = userFromAuthorInfo(renderer);
-        msgSpanHtml += makeStickerSpan(renderer);
-        app.runningStats.numSuperStickers++;
+        msgSpanHtml += makeStickerSpan(renderer, scColour);
         isSuperSticker = true;
+        app.runningStats.numSuperStickers++;
+        if (!app.runningStats.colourTotals[scColour]) app.runningStats.colourTotals[scColour] = 0;
+        app.runningStats.colourTotals[scColour]++;
+        if (!app.runningStats.currencyTotals[currencyLabel]) app.runningStats.currencyTotals[currencyLabel] = 0.0;
+        app.runningStats.currencyTotals[currencyLabel] += superChatValue;
     } else if (actionItem.liveChatTextMessageRenderer) {
         const renderer = actionItem.liveChatTextMessageRenderer;
         user = userFromAuthorInfo(renderer);
@@ -307,5 +312,10 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
     });
 
     app.runningStats.numChatMessages++;
+    if (user.isMember) app.runningStats.numMemberChats++;
+    else app.runningStats.numGreyChats++;
+    if (user.isMod) app.runningStats.numModChats++;
+    if (user.isOwner) app.runningStats.numOwnerChats++;
+
     return true;
 }

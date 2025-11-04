@@ -10,6 +10,7 @@ a {
 
 #loader, #controls {
   position: fixed;
+  z-index: 20;
   left: 0;
   right: 0;
   padding: 8px 20px;
@@ -98,10 +99,10 @@ a {
     .msg.superchat .text, .msg.super-sticker .text {
       display: inline-block;
       padding: 2px 0; }
-    .msg.superchat.dark-blue, .msg.super-sticker.dark-blue {
+    .msg.superchat.blue, .msg.super-sticker.blue {
       background-color: #1565c0;
       color: #0f0f0f; }
-      .msg.superchat.dark-blue .money, .msg.super-sticker.dark-blue .money {
+      .msg.superchat.blue .money, .msg.super-sticker.blue .money {
         background-color: #1565c0; }
     .msg.superchat.light-blue, .msg.super-sticker.light-blue {
       background-color: #00e5ff;
@@ -166,5 +167,42 @@ a {
     width: 36px;
     height: 36px;
     vertical-align: top; }
+
+#stats {
+  display: none;
+  position: absolute;
+  z-index: 10;
+  top: 80px;
+  width: 360px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  padding: 20px 60px;
+  background-color: #1c1c4d;
+  border: solid 1px #5d5db3;
+  border-radius: 8px; }
+
+#close-stats {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-size: 16px; }
+
+#stats h2 {
+  margin: 0 0 10px 0;
+  font-size: 18px; }
+
+#stats .stats-block {
+  width: 100%;
+  margin-bottom: 20px; }
+
+#stats .stats-row {
+  padding: 2px 0; }
+
+#stats .stats-block .label {
+  display: inline-block;
+  font-weight: bold;
+  width: 250px;
+  color: #d0d0ff; }
 
 /*# sourceMappingURL=viewer.css.map */

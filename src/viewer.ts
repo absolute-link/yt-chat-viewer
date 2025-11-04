@@ -54,6 +54,73 @@ function freshAggregateStats(): AppAggregateStats {
     };
 }
 
+function humanizeColour(colour: string) {
+    return colour.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function roundCurrency(value: number) {
+    return Math.round((value * 100) / 100);
+}
+
+function newStatsRow(label: string, value: number) {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'stats-row';
+    rowEl.innerHTML = `<span class="label">${label}</span><span class="value">${value}</span>`;
+    return rowEl;
+}
+
+function updateStatsDialog() {
+    const generalBody = document.getElementById('general-stats-body');
+    if (!generalBody) throw new Error('General stats body not found');
+
+    const monetizationBody = document.getElementById('monetization-stats-body');
+    if (!monetizationBody) throw new Error('Monetization stats body not found');
+
+    const currencyBody = document.getElementById('currency-stats-body');
+    if (!currencyBody) throw new Error('Currency stats body not found');
+
+    const stats = APP.runningStats;
+
+    generalBody.innerHTML = '';
+    monetizationBody.innerHTML = '';
+    currencyBody.innerHTML = '';
+
+    const generalStats: Map<string, number> = new Map([
+        ['Total Messages', stats.numChatMessages],
+        ['Member Chats', stats.numMemberChats],
+        ['Non-Member Chats', stats.numGreyChats],
+        ['Moderator Chats', stats.numModChats],
+        ['Owner Chats', stats.numOwnerChats],
+        ['Membership Joins', stats.numMembershipJoins],
+        ['Milestone Messages', stats.numMilestoneMessages],
+    ]);
+
+    const monetizationStats: Map<string, number> = new Map([
+        ['Number of Member Gifts', stats.numGiftPurchases],
+        ['Total Memberships Gifted', stats.totalGiftsPurchased],
+        ['Total Super Chats', stats.numSuperchats],
+        ['Total Super Stickers', stats.numSuperStickers],
+    ]);
+    for (const [colour, count] of Object.entries(stats.colourTotals)) {
+        monetizationStats.set(`${humanizeColour(colour)} SC / SS`, count);
+    }
+
+    const currencyStats: Map<string, number> = new Map();
+    for (const [currencyLabel, total] of Object.entries(stats.currencyTotals)) {
+        currencyStats.set(`Total ${currencyLabel}`, roundCurrency(total));
+    }
+
+    for (const [label, value] of generalStats.entries()) {
+        generalBody.appendChild(newStatsRow(label, value));
+    }
+    for (const [label, value] of monetizationStats.entries()) {
+        monetizationBody.appendChild(newStatsRow(label, value));
+    }
+    for (const [label, value] of currencyStats.entries()) {
+        currencyBody.appendChild(newStatsRow(label, value));
+    }
+}
+
 function clearChat() {
     APP.loadedFile = '';
     APP.allChats = [];
@@ -184,6 +251,26 @@ async function processJsonFile(fileObj: File) {
     if (!filtersForm || !(filtersForm instanceof HTMLFormElement)) throw new Error('Filters form not found');
     filtersForm.addEventListener('submit', filterChat, false);
 
+    const viewStatsBtn = document.getElementById('view-stats');
+    if (!viewStatsBtn || !(viewStatsBtn instanceof HTMLButtonElement)) throw new Error('View stats button not found');
+    viewStatsBtn.addEventListener('click', () => {
+        const statsDialog = document.getElementById('stats');
+        if (statsDialog) {
+            if (statsDialog.style.display === 'block') {
+                statsDialog.style.display = 'none';
+            } else {
+                statsDialog.style.display = 'block';
+            }
+        }
+    }, false);
+
+    const closeStatsBtn = document.getElementById('close-stats');
+    if (!closeStatsBtn || !(closeStatsBtn instanceof HTMLButtonElement)) throw new Error('Close stats button not found');
+    closeStatsBtn.addEventListener('click', () => {
+        const statsDialog = document.getElementById('stats');
+        if (statsDialog) statsDialog.style.display = 'none';
+    }, false);
+
     filePicker.addEventListener('change', () => {
         clearChat();
         clearErrorMsg();
@@ -192,11 +279,10 @@ async function processJsonFile(fileObj: File) {
         const file = filePicker.files[0];
         if (file.type !== 'application/json') return setErrorMsg('Error: Please choose a JSON file');
 
-        processJsonFile(file).then(displayChat);
-
-        console.log(APP.runningStats);
-        console.log(APP.aggregateStats);
-        console.log(APP.userStats);
+        processJsonFile(file).then(() => {
+            displayChat();
+            updateStatsDialog();
+        });
     }, false);
 })().catch((err) => {
     if (!err) return;

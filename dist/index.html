@@ -35,8 +35,17 @@
                 </form>
             </div>
             <div class="right">
-                <button id="stats" title="Stats">Show Stats</button>
+                <button id="view-stats" type="button" title="Stats">View Stats</button>
             </div>
+        </div>
+        <div id="stats">
+            <button id="close-stats" title="Close Stats">X</button>
+            <h2>General Stats</h2>
+            <div id="general-stats-body" class="stats-block"></div>
+            <h2>Monetization Stats</h2>
+            <div id="monetization-stats-body" class="stats-block"></div>
+            <h2>Currency Totals</h2>
+            <div id="currency-stats-body" class="stats-block"></div>
         </div>
 
         <script src="viewer.js" type="module"></script>

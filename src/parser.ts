@@ -225,20 +225,23 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
     let msgSpanHtml = '';
     let isSuperChat = false;
     let isSuperSticker = false;
+    let superColour = '';
+    let superCurrency = '';
+    let superValue = 0.0;
+    let isMembershipJoin = false;
     let isMembershipMessage = false;
     let isMembershipGift = false;
+    let numGiftsPurchased = 0;
     let isMembershipRedemption = false;
 
     if (actionItem.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer) {
         const topRenderer = actionItem.liveChatSponsorshipsGiftPurchaseAnnouncementRenderer;
         const subRenderer = topRenderer.header.liveChatSponsorshipsHeaderRenderer;
         subRenderer.authorExternalChannelId = topRenderer.authorExternalChannelId;
-        const giftCount = parseInt((subRenderer.primaryText.runs || [])[1].text || '0');
+        isMembershipGift = true;
+        numGiftsPurchased = parseInt((subRenderer.primaryText.runs || [])[1].text || '0');
         user = userFromAuthorInfo(subRenderer);
         msgSpanHtml += makeGiftMessageSpan(subRenderer.primaryText);
-        isMembershipGift = true;
-        app.runningStats.numGiftPurchases++;
-        app.runningStats.totalGiftsPurchased += giftCount;
     } else if (actionItem.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer) {
         const renderer = actionItem.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
         user = userFromAuthorInfo(renderer);
@@ -251,38 +254,32 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
             // TODO: what does it look like if someone sends one without a message?
             msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.message);
             textContent = simplifyText(renderer.message);
-            app.runningStats.numMilestoneMessages++;
+            isMembershipMessage = true;
         } else {
             msgSpanHtml += makeMessageSpan(renderer.headerSubtext, ['membership-join', 'system-message']);
-            app.runningStats.numMembershipJoins++;
+            isMembershipJoin = true;
         }
-        isMembershipMessage = true;
     } else if (actionItem.liveChatPaidMessageRenderer) {
         const renderer = actionItem.liveChatPaidMessageRenderer;
-        const scColour = colourClassFromRaw(renderer.bodyBackgroundColor);
-        const { currencyLabel, amount: superChatValue } = superchatValueFromRaw(renderer.purchaseAmountText);
-        user = userFromAuthorInfo(renderer);
-        msgSpanHtml += makeSuperChatSpan(renderer, scColour);
+        const { currencyLabel, amount } = superchatValueFromRaw(renderer.purchaseAmountText);
+        superColour = colourClassFromRaw(renderer.bodyBackgroundColor);
+        superValue = amount;
+        superCurrency = currencyLabel;
         isSuperChat = true;
-        textContent = simplifyText(renderer.message || '');
 
-        app.runningStats.numSuperchats++;
-        if (!app.runningStats.colourTotals[scColour]) app.runningStats.colourTotals[scColour] = 0;
-        app.runningStats.colourTotals[scColour]++;
-        if (!app.runningStats.currencyTotals[currencyLabel]) app.runningStats.currencyTotals[currencyLabel] = 0.0;
-        app.runningStats.currencyTotals[currencyLabel] += superChatValue;
+        user = userFromAuthorInfo(renderer);
+        msgSpanHtml += makeSuperChatSpan(renderer, superColour);
+        textContent = simplifyText(renderer.message || '');
     } else if (actionItem.liveChatPaidStickerRenderer) {
         const renderer = actionItem.liveChatPaidStickerRenderer;
-        const scColour = colourClassFromRaw(renderer.backgroundColor);
-        const { currencyLabel, amount: superChatValue } = superchatValueFromRaw(renderer.purchaseAmountText);
-        user = userFromAuthorInfo(renderer);
-        msgSpanHtml += makeStickerSpan(renderer, scColour);
+        const { currencyLabel, amount } = superchatValueFromRaw(renderer.purchaseAmountText);
+        superColour = colourClassFromRaw(renderer.backgroundColor);
+        superValue = amount;
+        superCurrency = currencyLabel;
         isSuperSticker = true;
-        app.runningStats.numSuperStickers++;
-        if (!app.runningStats.colourTotals[scColour]) app.runningStats.colourTotals[scColour] = 0;
-        app.runningStats.colourTotals[scColour]++;
-        if (!app.runningStats.currencyTotals[currencyLabel]) app.runningStats.currencyTotals[currencyLabel] = 0.0;
-        app.runningStats.currencyTotals[currencyLabel] += superChatValue;
+
+        user = userFromAuthorInfo(renderer);
+        msgSpanHtml += makeStickerSpan(renderer, superColour);
     } else if (actionItem.liveChatTextMessageRenderer) {
         const renderer = actionItem.liveChatTextMessageRenderer;
         user = userFromAuthorInfo(renderer);
@@ -303,19 +300,18 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         isOwner: user.isOwner,
         isSuperChat,
         isSuperSticker,
+        superColour,
+        superCurrency,
+        superValue,
+        isMembershipJoin,
         isMembershipMessage,
         isMembershipGift,
+        numGiftsPurchased,
         isMembershipRedemption,
         userName: user.name,
         textContent,
         htmlLine: lineHtml,
     });
-
-    app.runningStats.numChatMessages++;
-    if (user.isMember) app.runningStats.numMemberChats++;
-    else app.runningStats.numGreyChats++;
-    if (user.isMod) app.runningStats.numModChats++;
-    if (user.isOwner) app.runningStats.numOwnerChats++;
 
     return true;
 }

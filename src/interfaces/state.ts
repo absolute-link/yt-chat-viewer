@@ -46,8 +46,13 @@ export interface ParsedChat {
     isOwner: boolean;
     isSuperChat: boolean;
     isSuperSticker: boolean;
+    superColour: string;
+    superCurrency: string;
+    superValue: number;
+    isMembershipJoin: boolean;
     isMembershipMessage: boolean;
     isMembershipGift: boolean;
+    numGiftsPurchased: number;
     isMembershipRedemption: boolean;
     userName: string;
     textContent: string;
@@ -58,9 +63,11 @@ export interface AppState {
     loadedFile: string;
     allChats: ParsedChat[];
     filteredChats: ParsedChat[];
+    activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;
-    runningStats: AppRunningStats;
+    allRunningStats: AppRunningStats;
+    filteredRunningStats: AppRunningStats;
     userStats: AppUserStats;
     aggregateStats: AppAggregateStats;
 }

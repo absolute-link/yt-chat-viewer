@@ -1,16 +1,18 @@
 import { setErrorMsg, clearErrorMsg } from './errors';
 import { getChunksToLinesTransform } from './lines';
 import { RawChatEvent } from './interfaces/yt';
-import { AppState, AppRunningStats, AppUserStats, AppAggregateStats } from './interfaces/state';
+import { AppState, AppRunningStats, AppUserStats, AppAggregateStats, ParsedChat } from './interfaces/state';
 import { processChatMessage } from './parser';
 
 const APP: AppState = {
     loadedFile: '',
     allChats: [],
     filteredChats: [],
+    activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
-    runningStats: freshRunningStats(),
+    allRunningStats: freshRunningStats(),
+    filteredRunningStats: freshRunningStats(),
     userStats: freshUserStats(),
     aggregateStats: freshAggregateStats(),
 };
@@ -59,17 +61,56 @@ function humanizeColour(colour: string) {
 }
 
 function roundCurrency(value: number) {
-    return Math.round((value * 100) / 100);
+    const rounded = Math.round(value * 100) / 100;
+    return rounded;
 }
 
-function newStatsRow(label: string, value: number) {
+function newStatsRow(label: string, allValue: number, filteredValue: number) {
     const rowEl = document.createElement('div');
     rowEl.className = 'stats-row';
-    rowEl.innerHTML = `<span class="label">${label}</span><span class="value">${value}</span>`;
+    rowEl.innerHTML = `<span class="label">${label}</span><span class="value all">${allValue}</span><span class="value filtered">${filteredValue}</span>`;
     return rowEl;
 }
 
+function calculateRunningStats(chats: ParsedChat[]): AppRunningStats {
+    const stats = freshRunningStats();
+
+    for (const chat of chats) {
+        stats.numChatMessages++;
+
+        if (chat.isMember) stats.numMemberChats++;
+        else stats.numGreyChats++;
+
+        if (chat.isMod) stats.numModChats++;
+        if (chat.isOwner) stats.numOwnerChats++;
+
+        if (chat.isMembershipJoin) stats.numMembershipJoins++;
+        if (chat.isMembershipMessage) stats.numMilestoneMessages++;
+        if (chat.isMembershipRedemption) stats.totalGiftsRedeemed++;
+
+        if (chat.isMembershipGift) {
+            stats.numGiftPurchases++;
+            stats.totalGiftsPurchased += chat.numGiftsPurchased;
+        }
+        if (chat.isSuperChat || chat.isSuperSticker) {
+            if (chat.isSuperChat) stats.numSuperchats++;
+            if (chat.isSuperSticker) stats.numSuperStickers++;
+
+            if (!stats.colourTotals[chat.superColour]) stats.colourTotals[chat.superColour] = 0;
+            stats.colourTotals[chat.superColour]++;
+
+            if (!stats.currencyTotals[chat.superCurrency]) stats.currencyTotals[chat.superCurrency] = 0.0;
+            stats.currencyTotals[chat.superCurrency] += chat.superValue;
+        }
+    }
+
+    return stats;
+}
+
 function updateStatsDialog() {
+    const statsDialog = document.getElementById('stats');
+    if (!statsDialog) throw new Error('Stats dialog not found');
+
     const generalBody = document.getElementById('general-stats-body');
     if (!generalBody) throw new Error('General stats body not found');
 
@@ -79,45 +120,56 @@ function updateStatsDialog() {
     const currencyBody = document.getElementById('currency-stats-body');
     if (!currencyBody) throw new Error('Currency stats body not found');
 
-    const stats = APP.runningStats;
+    if (APP.activeFilter) {
+        statsDialog.classList.add('filtered');
+        statsDialog.classList.remove('unfiltered');
+    } else {
+        statsDialog.classList.add('unfiltered');
+        statsDialog.classList.remove('filtered');
+    }
+
+    const allStats = APP.allRunningStats;
+    const filteredStats = APP.filteredRunningStats;
 
     generalBody.innerHTML = '';
     monetizationBody.innerHTML = '';
     currencyBody.innerHTML = '';
 
-    const generalStats: Map<string, number> = new Map([
-        ['Total Messages', stats.numChatMessages],
-        ['Member Chats', stats.numMemberChats],
-        ['Non-Member Chats', stats.numGreyChats],
-        ['Moderator Chats', stats.numModChats],
-        ['Owner Chats', stats.numOwnerChats],
-        ['Membership Joins', stats.numMembershipJoins],
-        ['Milestone Messages', stats.numMilestoneMessages],
-    ]);
+    const generalStats: [string, number, number][] = [
+        ['Total Messages', allStats.numChatMessages, filteredStats.numChatMessages],
+        ['Member Chats', allStats.numMemberChats, filteredStats.numMemberChats],
+        ['Non-Member Chats', allStats.numGreyChats, filteredStats.numGreyChats],
+        ['Moderator Chats', allStats.numModChats, filteredStats.numModChats],
+        ['Owner Chats', allStats.numOwnerChats, filteredStats.numOwnerChats],
+        ['Membership Joins', allStats.numMembershipJoins, filteredStats.numMembershipJoins],
+        ['Milestone Messages', allStats.numMilestoneMessages, filteredStats.numMilestoneMessages],
+    ];
 
-    const monetizationStats: Map<string, number> = new Map([
-        ['Number of Member Gifts', stats.numGiftPurchases],
-        ['Total Memberships Gifted', stats.totalGiftsPurchased],
-        ['Total Super Chats', stats.numSuperchats],
-        ['Total Super Stickers', stats.numSuperStickers],
-    ]);
-    for (const [colour, count] of Object.entries(stats.colourTotals)) {
-        monetizationStats.set(`${humanizeColour(colour)} SC / SS`, count);
-    }
-
-    const currencyStats: Map<string, number> = new Map();
-    for (const [currencyLabel, total] of Object.entries(stats.currencyTotals)) {
-        currencyStats.set(`Total ${currencyLabel}`, roundCurrency(total));
+    const monetizationStats: [string, number, number][] = [
+        ['Number of Member Gifts', allStats.numGiftPurchases, filteredStats.numGiftPurchases],
+        ['Total Memberships Gifted', allStats.totalGiftsPurchased, filteredStats.totalGiftsPurchased],
+        ['Total Super Chats', allStats.numSuperchats, filteredStats.numSuperchats],
+        ['Total Super Stickers', allStats.numSuperStickers, filteredStats.numSuperStickers],
+    ];
+    for (const [colour, allCount] of Object.entries(allStats.colourTotals)) {
+        const filteredCount = filteredStats.colourTotals[colour] || 0;
+        monetizationStats.push([`${humanizeColour(colour)} SC / SS`, allCount, filteredCount]);
     }
 
-    for (const [label, value] of generalStats.entries()) {
-        generalBody.appendChild(newStatsRow(label, value));
+    const currencyStats: [string, number, number][] = [];
+    for (const [currencyLabel, allTotal] of Object.entries(allStats.currencyTotals)) {
+        const filteredTotal = filteredStats.currencyTotals[currencyLabel] || 0;
+        currencyStats.push([`Total ${currencyLabel}`, roundCurrency(allTotal), roundCurrency(filteredTotal)]);
     }
-    for (const [label, value] of monetizationStats.entries()) {
-        monetizationBody.appendChild(newStatsRow(label, value));
+
+    for (const [label, allValue, filteredValue] of generalStats) {
+        generalBody.appendChild(newStatsRow(label, allValue, filteredValue));
     }
-    for (const [label, value] of currencyStats.entries()) {
-        currencyBody.appendChild(newStatsRow(label, value));
+    for (const [label, allValue, filteredValue] of monetizationStats) {
+        monetizationBody.appendChild(newStatsRow(label, allValue, filteredValue));
+    }
+    for (const [label, allValue, filteredValue] of currencyStats) {
+        currencyBody.appendChild(newStatsRow(label, allValue, filteredValue));
     }
 }
 
@@ -125,8 +177,10 @@ function clearChat() {
     APP.loadedFile = '';
     APP.allChats = [];
     APP.filteredChats = [];
+    APP.activeFilter = false;
     APP.currentPage = 1;
-    APP.runningStats = freshRunningStats();
+    APP.allRunningStats = freshRunningStats();
+    APP.filteredRunningStats = freshRunningStats();
     APP.userStats = freshUserStats();
     APP.aggregateStats = freshAggregateStats();
 
@@ -142,6 +196,17 @@ function filterChat(evt: Event) {
 
     const textSearchBox = document.getElementById('search-text');
     if (!textSearchBox || !(textSearchBox instanceof HTMLInputElement)) throw new Error('Search text box not found');
+
+    if (typeDropdown.value === '' && textSearchBox.value.trim() === '') {
+        console.log('no filter');
+        APP.activeFilter = false;
+        APP.filteredChats = APP.allChats.slice();
+        APP.currentPage = 1;
+        APP.filteredRunningStats = APP.allRunningStats;
+        updateStatsDialog();
+        displayChat();
+        return;
+    }
 
     const searchText = textSearchBox.value.toLowerCase();
     APP.filteredChats = APP.allChats.filter((chat) => {
@@ -162,7 +227,10 @@ function filterChat(evt: Event) {
         );
     });
 
+    APP.activeFilter = true;
     APP.currentPage = 1;
+    APP.filteredRunningStats = calculateRunningStats(APP.filteredChats);
+    updateStatsDialog();
     displayChat();
 }
 
@@ -253,22 +321,34 @@ async function processJsonFile(fileObj: File) {
 
     const viewStatsBtn = document.getElementById('view-stats');
     if (!viewStatsBtn || !(viewStatsBtn instanceof HTMLButtonElement)) throw new Error('View stats button not found');
-    viewStatsBtn.addEventListener('click', () => {
-        const statsDialog = document.getElementById('stats');
-        if (statsDialog) {
-            if (statsDialog.style.display === 'block') {
-                statsDialog.style.display = 'none';
-            } else {
-                statsDialog.style.display = 'block';
-            }
-        }
-    }, false);
+
+    const statsDialog = document.getElementById('stats');
+    if (!statsDialog) throw new Error('Stats dialog not found');
+
+    const statsShade = document.getElementById('stats-shade');
+    if (!statsShade) throw new Error('Stats shade not found');
 
     const closeStatsBtn = document.getElementById('close-stats');
     if (!closeStatsBtn || !(closeStatsBtn instanceof HTMLButtonElement)) throw new Error('Close stats button not found');
+
+    viewStatsBtn.addEventListener('click', () => {
+        if (statsDialog.style.display === 'block') {
+            statsDialog.style.display = 'none';
+            statsShade.style.display = 'none';
+        } else {
+            statsDialog.style.display = 'block';
+            statsShade.style.display = 'block';
+        }
+    }, false);
+
+    statsShade.addEventListener('click', () => {
+        statsDialog.style.display = 'none';
+        statsShade.style.display = 'none';
+    }, false);
+
     closeStatsBtn.addEventListener('click', () => {
-        const statsDialog = document.getElementById('stats');
-        if (statsDialog) statsDialog.style.display = 'none';
+        statsDialog.style.display = 'none';
+        statsShade.style.display = 'none';
     }, false);
 
     filePicker.addEventListener('change', () => {
@@ -281,6 +361,8 @@ async function processJsonFile(fileObj: File) {
 
         processJsonFile(file).then(() => {
             displayChat();
+            APP.allRunningStats = calculateRunningStats(APP.allChats);
+            APP.filteredRunningStats = APP.allRunningStats;
             updateStatsDialog();
         });
     }, false);

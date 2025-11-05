@@ -10,6 +10,10 @@ a {
     text-decoration: none;
 }
 
+button {
+    cursor: pointer;
+}
+
 #loader, #controls {
     position: fixed;
     z-index: 20;
@@ -237,12 +241,22 @@ a {
     }
 }
 
+#stats-shade {
+    display: none;
+    position: fixed;
+    z-index: 5;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+}
 #stats {
     display: none;
     position: absolute;
     z-index: 10;
     top: 80px;
-    width: 360px;
+    width: 340px;
     left: 0;
     right: 0;
     margin: 0 auto;
@@ -250,6 +264,9 @@ a {
     background-color: #1c1c4d;
     border: solid 1px #5d5db3;
     border-radius: 8px;
+}
+#stats.filtered {
+    width: 460px;
 }
 #close-stats {
     position: absolute;
@@ -261,16 +278,42 @@ a {
     margin: 0 0 10px 0;
     font-size: 18px;
 }
+#stats h2 .label {
+    display: inline-block;
+    width: 220px;
+}
+#stats h2 .value {
+    display: none;
+    width: 120px;
+}
+#stats.filtered h2 .value {
+    display: inline-block;
+}
+
 #stats .stats-block {
     width: 100%;
     margin-bottom: 20px;
 }
 #stats .stats-row {
-    padding: 2px 0;
+    padding: 4px 0;
+    border-bottom: 1px solid #3c3c81;
+}
+#stats .stats-row:last-child {
+    border-bottom: none;
 }
 #stats .stats-block .label {
     display: inline-block;
     font-weight: bold;
-    width: 250px;
+    width: 220px;
     color: #d0d0ff;
+}
+#stats .stats-block .value {
+    display: inline-block;
+    width: 120px;
+}
+#stats .stats-block .value.filtered {
+    display: none;
+}
+#stats.filtered .stats-block .value.filtered {
+    display: inline-block;
 }

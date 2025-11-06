@@ -317,3 +317,15 @@ button {
 #stats.filtered .stats-block .value.filtered {
     display: inline-block;
 }
+#stats .real-currency {
+    display: inline-block;
+    font-weight: normal;
+    font-size: 10px;
+    color: #d0d0ff;
+    padding-left: 10px;
+}
+#stats .footnote {
+    font-size: 11px;
+    color: #d0d0ff;
+    margin-bottom: 6px;
+}

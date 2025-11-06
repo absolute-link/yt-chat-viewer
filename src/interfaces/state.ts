@@ -1,3 +1,5 @@
+import { YtCurrencyMap, CurrencyConversions } from './general';
+
 export interface AppRunningStats {
     numChatMessages: number;
     numMemberChats: number;
@@ -66,6 +68,8 @@ export interface AppState {
     activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;
+    currencyMap: YtCurrencyMap;
+    currencyConversions: CurrencyConversions;
     allRunningStats: AppRunningStats;
     filteredRunningStats: AppRunningStats;
     userStats: AppUserStats;

@@ -3,6 +3,7 @@ import { getChunksToLinesTransform } from './lines';
 import { RawChatEvent } from './interfaces/yt';
 import { AppState, AppRunningStats, AppUserStats, AppAggregateStats, ParsedChat } from './interfaces/state';
 import { processChatMessage } from './parser';
+import { loadCurrencyConversions, getYtCurrencyMap, currencyCodeFromYtLabel } from './currency';
 
 const APP: AppState = {
     loadedFile: '',
@@ -11,6 +12,8 @@ const APP: AppState = {
     activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
+    currencyMap: getYtCurrencyMap(),
+    currencyConversions: {},
     allRunningStats: freshRunningStats(),
     filteredRunningStats: freshRunningStats(),
     userStats: freshUserStats(),
@@ -156,11 +159,28 @@ function updateStatsDialog() {
         monetizationStats.push([`${humanizeColour(colour)} SC / SS`, allCount, filteredCount]);
     }
 
-    const currencyStats: [string, number, number][] = [];
+    let totalEstimateUSD = 0.0;
+    let filteredEstimateUSD = 0.0;
+    const currencyStats: [string, number, number][] = [
+        ['Estimated Total in USD*', 0.0, 0.0],
+    ];
+
     for (const [currencyLabel, allTotal] of Object.entries(allStats.currencyTotals)) {
+        const realCurrencyCode = currencyCodeFromYtLabel(currencyLabel);
+        const visualLabel = (realCurrencyCode !== currencyLabel) ? `${currencyLabel} <span class="real-currency">(${realCurrencyCode})</span>` : currencyLabel;
         const filteredTotal = filteredStats.currencyTotals[currencyLabel] || 0;
-        currencyStats.push([`Total ${currencyLabel}`, roundCurrency(allTotal), roundCurrency(filteredTotal)]);
+
+        currencyStats.push([`${visualLabel}`, roundCurrency(allTotal), roundCurrency(filteredTotal)]);
+
+        if (APP.currencyConversions && currencyLabel in APP.currencyConversions) {
+            const rate = APP.currencyConversions[currencyLabel];
+            totalEstimateUSD += allTotal * rate;
+            filteredEstimateUSD += filteredTotal * rate;
+        }
     }
+    currencyStats[0][1] = roundCurrency(totalEstimateUSD);
+    currencyStats[0][2] = roundCurrency(filteredEstimateUSD);
+
 
     for (const [label, allValue, filteredValue] of generalStats) {
         generalBody.appendChild(newStatsRow(label, allValue, filteredValue));
@@ -366,6 +386,8 @@ async function processJsonFile(fileObj: File) {
             updateStatsDialog();
         });
     }, false);
+
+    APP.currencyConversions = await loadCurrencyConversions();
 })().catch((err) => {
     if (!err) return;
     if (err && typeof err.message === 'string') setErrorMsg(err.message);

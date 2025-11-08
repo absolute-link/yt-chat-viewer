@@ -331,8 +331,14 @@ async function processJsonFile(fileObj: File) {
 }
 
 (async () => {
+    const loadingIcon = document.getElementById('loading-icon');
+    if (!loadingIcon) throw new Error('Loading icon element not found');
+
     const filePicker = document.getElementById('json-file');
     if (!filePicker || !(filePicker instanceof HTMLInputElement)) throw new Error('File element not found');
+
+    const urlDisplay = document.getElementById('url-display');
+    if (!urlDisplay) throw new Error('URL display element not found');
 
     const prevPageBtn = document.getElementById('prev-page');
     if (!prevPageBtn || !(prevPageBtn instanceof HTMLButtonElement)) throw new Error('Prev page button not found');
@@ -361,6 +367,9 @@ async function processJsonFile(fileObj: File) {
     const loadCurrenciesBtn = document.getElementById('load-currencies');
     if (!loadCurrenciesBtn || !(loadCurrenciesBtn instanceof HTMLButtonElement)) throw new Error('Load currencies button not found');
 
+    // start with zeroed stats
+    updateStatsDialog();
+
     viewStatsBtn.addEventListener('click', () => {
         if (statsDialog.style.display === 'block') {
             statsDialog.style.display = 'none';
@@ -368,6 +377,7 @@ async function processJsonFile(fileObj: File) {
         } else {
             statsDialog.style.display = 'block';
             statsShade.style.display = 'block';
+            scrollTo(0, 0);
         }
     }, false);
 
@@ -396,7 +406,7 @@ async function processJsonFile(fileObj: File) {
         updateStatsDialog();
     }, false);
 
-    filePicker.addEventListener('change', () => {
+    filePicker.addEventListener('change', async () => {
         clearChat();
         clearErrorMsg();
         if (!filePicker.files || !filePicker.files.length) return;
@@ -404,15 +414,40 @@ async function processJsonFile(fileObj: File) {
         const file = filePicker.files[0];
         if (file.type !== 'application/json') return setErrorMsg('Error: Please choose a JSON file');
 
-        processJsonFile(file).then(() => {
+        loadingIcon.style.display = 'block';
+        await processJsonFile(file);
+        loadingIcon.style.display = 'none';
+
+        displayChat();
+        APP.allRunningStats = calculateRunningStats(APP.allChats);
+        APP.filteredRunningStats = APP.allRunningStats;
+        updateStatsDialog();
+    }, false);
+
+    if (window.location.search) {
+        const params = new URLSearchParams(window.location.search);
+        const chatFileUrl = params.get('chatFile');
+        if (chatFileUrl) {
+            filePicker.style.display = 'none';
+            urlDisplay.style.display = 'block';
+            urlDisplay.textContent = `Chat File: ${chatFileUrl}`;
+            loadingIcon.style.display = 'block';
+
+            const response = await fetch(chatFileUrl);
+            if (!response.ok) throw new Error('Failed to load chat file from URL');
+
+            const blob = await response.blob();
+            if (blob.type !== 'application/json') throw new Error('Error: Please provide a JSON file');
+
+            await processJsonFile(new File([blob], 'chat.json', { type: 'application/json' }));
+
+            loadingIcon.style.display = 'none';
             displayChat();
             APP.allRunningStats = calculateRunningStats(APP.allChats);
             APP.filteredRunningStats = APP.allRunningStats;
             updateStatsDialog();
-        });
-    }, false);
-
-    updateStatsDialog();
+        }
+    }
 })().catch((err) => {
     if (!err) return;
     if (err && typeof err.message === 'string') setErrorMsg(err.message);

@@ -14,6 +14,18 @@ button {
     cursor: pointer;
 }
 
+#loading-icon {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    top: 30%;
+    left: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
 #loader, #controls {
     position: fixed;
     z-index: 20;
@@ -34,6 +46,10 @@ button {
 }
 
 #loader input {
+    width: 100%;
+}
+#loader #url-display {
+    display: none;
     width: 100%;
 }
 

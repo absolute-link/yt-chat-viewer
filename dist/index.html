@@ -6,12 +6,16 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
+        <link rel="stylesheet" href="loader.css" />
         <link rel="stylesheet" href="viewer.css" />
     </head>
     <body>
-
+        <div id="loading-icon">
+            <div class="lds-default"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+        </div>
         <div id="loader">
             <input id="json-file" type="file" title="Pick JSON File" />
+            <span id="url-display"></span>
         </div>
         <div id="chat"></div>
         <div id="error"></div>

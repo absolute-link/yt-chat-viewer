@@ -13,6 +13,7 @@ const APP: AppState = {
     currentPage: 1,
     limitPerPage: 1500,
     currencyMap: getYtCurrencyMap(),
+    currenciesLoaded: false,
     currencyConversions: {},
     allRunningStats: freshRunningStats(),
     filteredRunningStats: freshRunningStats(),
@@ -68,7 +69,7 @@ function roundCurrency(value: number) {
     return rounded;
 }
 
-function newStatsRow(label: string, allValue: number, filteredValue: number) {
+function newStatsRow(label: string, allValue: string | number, filteredValue: string | number) {
     const rowEl = document.createElement('div');
     rowEl.className = 'stats-row';
     rowEl.innerHTML = `<span class="label">${label}</span><span class="value all">${allValue}</span><span class="value filtered">${filteredValue}</span>`;
@@ -123,6 +124,10 @@ function updateStatsDialog() {
     const currencyBody = document.getElementById('currency-stats-body');
     if (!currencyBody) throw new Error('Currency stats body not found');
 
+    const estimateUSDAllSpan = document.getElementById('estimate-usd-all');
+    const estimateUSDFilteredSpan = document.getElementById('estimate-usd-filtered');
+    if (!estimateUSDAllSpan || !estimateUSDFilteredSpan) throw new Error('USD estimate spans not found');
+
     if (APP.activeFilter) {
         statsDialog.classList.add('filtered');
         statsDialog.classList.remove('unfiltered');
@@ -151,6 +156,7 @@ function updateStatsDialog() {
     const monetizationStats: [string, number, number][] = [
         ['Number of Member Gifts', allStats.numGiftPurchases, filteredStats.numGiftPurchases],
         ['Total Memberships Gifted', allStats.totalGiftsPurchased, filteredStats.totalGiftsPurchased],
+        ['Membership Gifts Redeemed', allStats.totalGiftsRedeemed, filteredStats.totalGiftsRedeemed],
         ['Total Super Chats', allStats.numSuperchats, filteredStats.numSuperchats],
         ['Total Super Stickers', allStats.numSuperStickers, filteredStats.numSuperStickers],
     ];
@@ -161,9 +167,7 @@ function updateStatsDialog() {
 
     let totalEstimateUSD = 0.0;
     let filteredEstimateUSD = 0.0;
-    const currencyStats: [string, number, number][] = [
-        ['Estimated Total in USD*', 0.0, 0.0],
-    ];
+    const currencyStats: [string, number, number][] = [];
 
     for (const [currencyLabel, allTotal] of Object.entries(allStats.currencyTotals)) {
         const realCurrencyCode = currencyCodeFromYtLabel(currencyLabel);
@@ -172,15 +176,12 @@ function updateStatsDialog() {
 
         currencyStats.push([`${visualLabel}`, roundCurrency(allTotal), roundCurrency(filteredTotal)]);
 
-        if (APP.currencyConversions && currencyLabel in APP.currencyConversions) {
+        if (APP.currenciesLoaded && APP.currencyConversions && currencyLabel in APP.currencyConversions) {
             const rate = APP.currencyConversions[currencyLabel];
             totalEstimateUSD += allTotal * rate;
             filteredEstimateUSD += filteredTotal * rate;
         }
     }
-    currencyStats[0][1] = roundCurrency(totalEstimateUSD);
-    currencyStats[0][2] = roundCurrency(filteredEstimateUSD);
-
 
     for (const [label, allValue, filteredValue] of generalStats) {
         generalBody.appendChild(newStatsRow(label, allValue, filteredValue));
@@ -188,6 +189,12 @@ function updateStatsDialog() {
     for (const [label, allValue, filteredValue] of monetizationStats) {
         monetizationBody.appendChild(newStatsRow(label, allValue, filteredValue));
     }
+
+    if (APP.currenciesLoaded) {
+        estimateUSDAllSpan.textContent = roundCurrency(totalEstimateUSD).toString();
+        estimateUSDFilteredSpan.textContent = roundCurrency(filteredEstimateUSD).toString();
+    }
+
     for (const [label, allValue, filteredValue] of currencyStats) {
         currencyBody.appendChild(newStatsRow(label, allValue, filteredValue));
     }
@@ -351,6 +358,9 @@ async function processJsonFile(fileObj: File) {
     const closeStatsBtn = document.getElementById('close-stats');
     if (!closeStatsBtn || !(closeStatsBtn instanceof HTMLButtonElement)) throw new Error('Close stats button not found');
 
+    const loadCurrenciesBtn = document.getElementById('load-currencies');
+    if (!loadCurrenciesBtn || !(loadCurrenciesBtn instanceof HTMLButtonElement)) throw new Error('Load currencies button not found');
+
     viewStatsBtn.addEventListener('click', () => {
         if (statsDialog.style.display === 'block') {
             statsDialog.style.display = 'none';
@@ -371,6 +381,21 @@ async function processJsonFile(fileObj: File) {
         statsShade.style.display = 'none';
     }, false);
 
+    loadCurrenciesBtn.addEventListener('click', async () => {
+        if (APP.currenciesLoaded) return;
+
+        const estimateUSDAllSpan = document.getElementById('estimate-usd-all');
+        const estimateUSDFilteredSpan = document.getElementById('estimate-usd-filtered');
+        if (!estimateUSDAllSpan || !estimateUSDFilteredSpan) throw new Error('USD estimate spans not found');
+
+        estimateUSDAllSpan.innerHTML = '•••';
+        estimateUSDFilteredSpan.innerHTML = '•••';
+
+        APP.currencyConversions = await loadCurrencyConversions();
+        APP.currenciesLoaded = true;
+        updateStatsDialog();
+    }, false);
+
     filePicker.addEventListener('change', () => {
         clearChat();
         clearErrorMsg();
@@ -387,7 +412,7 @@ async function processJsonFile(fileObj: File) {
         });
     }, false);
 
-    APP.currencyConversions = await loadCurrencyConversions();
+    updateStatsDialog();
 })().catch((err) => {
     if (!err) return;
     if (err && typeof err.message === 'string') setErrorMsg(err.message);

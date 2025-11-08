@@ -206,8 +206,9 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: for each custom emote found, load it ahead of time so the browser can cache it
 
-    // TODO: allow loading from a URL (e.g. Google Drive link), instead of just from a file
+    // TODO: allow loading from a URL instead of just from a file
         // accept an encoded URL in query string param, so that chats can be bookmarked or even shared directly
+        // use Cloudflare R2 (sign up with Link)
 
     // TODO: we can see who the raid went to! check if this appears in VODs as well (msgData.replayChatItemAction?.actions[0].addBannerToLiveChatCommand)
     // TODO: removeChatItemByAuthorAction (does it have something above the actions? no ID within them)
@@ -216,9 +217,6 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: track as many stats as possible
         // first message for user (visible), number of messages from this user (on hover or out of the way), total messages, total unique users, avg messages per user, messages per minute
-        // total channel emotes used, most used top three emotes, avg emotes used per user, avg emotes used per message, emotes per minute
-        // total membership gifts given, membership gifts received, total joins and total upgrades, total milestone messages
-        // superchat totals (number, per colour, totals per currency), maybe a button to use JS to reach out to an API to calculate it all in USD
 
     let user: User;
     let textContent = '';

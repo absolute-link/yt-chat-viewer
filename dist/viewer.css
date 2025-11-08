@@ -223,12 +223,18 @@ button {
   width: 100%;
   margin-bottom: 20px; }
 
+#stats #currency-stats-head.stats-block {
+  margin-bottom: 0; }
+
 #stats .stats-row {
   padding: 4px 0;
   border-bottom: 1px solid #3c3c81; }
 
 #stats .stats-row:last-child {
   border-bottom: none; }
+
+#currency-stats-body .stats-row:first-child {
+  border-top: 1px solid #3c3c81; }
 
 #stats .stats-block .label {
   display: inline-block;
@@ -245,6 +251,11 @@ button {
 
 #stats.filtered .stats-block .value.filtered {
   display: inline-block; }
+
+#stats .stats-block .value button {
+  display: inline-block;
+  padding: 0 6px;
+  margin: -2px 0; }
 
 #stats .real-currency {
   display: inline-block;

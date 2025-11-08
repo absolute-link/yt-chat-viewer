@@ -70,6 +70,7 @@ export interface AppState {
     limitPerPage: number;
     currencyMap: YtCurrencyMap;
     currencyConversions: CurrencyConversions;
+    currenciesLoaded: boolean;
     allRunningStats: AppRunningStats;
     filteredRunningStats: AppRunningStats;
     userStats: AppUserStats;

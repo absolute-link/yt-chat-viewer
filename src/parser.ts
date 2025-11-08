@@ -206,10 +206,6 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: for each custom emote found, load it ahead of time so the browser can cache it
 
-    // TODO: allow loading from a URL instead of just from a file
-        // accept an encoded URL in query string param, so that chats can be bookmarked or even shared directly
-        // use Cloudflare R2 (sign up with Link)
-
     // TODO: we can see who the raid went to! check if this appears in VODs as well (msgData.replayChatItemAction?.actions[0].addBannerToLiveChatCommand)
     // TODO: removeChatItemByAuthorAction (does it have something above the actions? no ID within them)
     // TODO: removeChatItemAction (this does include a targetItemId)
@@ -244,6 +240,7 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         const renderer = actionItem.liveChatSponsorshipsGiftRedemptionAnnouncementRenderer;
         user = userFromAuthorInfo(renderer);
         msgSpanHtml += makeMessageSpan(renderer.message, ['membership-received', 'system-message']);
+        textContent = simplifyText(renderer.message || '');
         isMembershipRedemption = true;
     } else if (actionItem.liveChatMembershipItemRenderer) {
         const renderer = actionItem.liveChatMembershipItemRenderer;
@@ -255,6 +252,7 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
             isMembershipMessage = true;
         } else {
             msgSpanHtml += makeMessageSpan(renderer.headerSubtext, ['membership-join', 'system-message']);
+            textContent = simplifyText(renderer.headerSubtext || '');
             isMembershipJoin = true;
         }
     } else if (actionItem.liveChatPaidMessageRenderer) {

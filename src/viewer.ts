@@ -243,6 +243,17 @@ function filterChat(evt: Event) {
         if (typeDropdown.value === 'monetized') {
             if (!chat.isSuperChat
                 && !chat.isSuperSticker
+                && !chat.isMembershipJoin
+                && !chat.isMembershipGift
+                && !chat.isMembershipRedemption
+                && !chat.isMembershipMessage
+            ) return false;
+        }
+        if (typeDropdown.value === 'supers') {
+            if (!chat.isSuperChat && !chat.isSuperSticker) return false;
+        }
+        if (typeDropdown.value === 'memberships') {
+            if (!chat.isMembershipJoin
                 && !chat.isMembershipGift
                 && !chat.isMembershipRedemption
                 && !chat.isMembershipMessage

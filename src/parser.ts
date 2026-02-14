@@ -139,9 +139,12 @@ function shortenMembershipLength(lengthText: RawTextData) {
 
 function makeTimeOffsetSpan(offsetMsec: string) {
     const msec = parseInt(offsetMsec, 10) || 0;
-    const fmt = (msec > 3600000) ? 'H:mm:ss' : 'mm:ss';
-    const offsetStr = dayjs.duration(msec).format(fmt);
-    const html = `<span class="time offset">${offsetStr}</span>`;
+    const sign = (msec < 0) ? '-' : '';
+    const absMsec = Math.abs(msec);
+    const fmt = (absMsec > 3600000) ? 'H:mm:ss' : 'mm:ss';
+
+    const offsetStr = dayjs.duration(absMsec).format(fmt);
+    const html = `<span class="time offset">${sign}${offsetStr}</span>`;
     return html;
 }
 

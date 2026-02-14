@@ -106,8 +106,9 @@ export interface RawGiftMembershipsRenderer {
 
 export interface RawChatEvent {
     isLive: boolean;
+    videoOffsetTimeMsec?: string;
     replayChatItemAction?: {
-        videoOffsetTimeMsec: string;
+        videoOffsetTimeMsec?: string;
         actions: {
             addChatItemAction?: {
                 item: {

@@ -286,7 +286,7 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
     }
 
     let lineHtml = '';
-    lineHtml += makeTimeOffsetSpan(msgData.replayChatItemAction?.videoOffsetTimeMsec || '');
+    lineHtml += makeTimeOffsetSpan(msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '');
     lineHtml += makeUserSpan(user);
     lineHtml += msgSpanHtml;
 

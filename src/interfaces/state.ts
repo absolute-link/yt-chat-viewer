@@ -43,6 +43,7 @@ export interface AppAggregateStats {
 }
 
 export interface ParsedChat {
+    itemId: string;
     isMember: boolean;
     isMod: boolean;
     isOwner: boolean;
@@ -65,6 +66,7 @@ export interface AppState {
     loadedFile: string;
     allChats: ParsedChat[];
     filteredChats: ParsedChat[];
+    renderedChatIds: Set<string>;
     activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;

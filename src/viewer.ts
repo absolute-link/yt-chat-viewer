@@ -9,6 +9,7 @@ const APP: AppState = {
     loadedFile: '',
     allChats: [],
     filteredChats: [],
+    renderedChatIds: new Set<string>(),
     activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
@@ -204,6 +205,7 @@ function clearChat() {
     APP.loadedFile = '';
     APP.allChats = [];
     APP.filteredChats = [];
+    APP.renderedChatIds.clear();
     APP.activeFilter = false;
     APP.currentPage = 1;
     APP.allRunningStats = freshRunningStats();

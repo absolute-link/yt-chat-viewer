@@ -97,6 +97,7 @@ export interface RawGiftMembershipsHeaderRenderer extends AuthorInfo {
 }
 
 export interface RawGiftMembershipsRenderer {
+    id: string;
     authorExternalChannelId: string;
     header: {
         liveChatSponsorshipsHeaderRenderer: RawGiftMembershipsHeaderRenderer

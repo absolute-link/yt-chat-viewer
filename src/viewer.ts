@@ -2,7 +2,7 @@ import { setErrorMsg, clearErrorMsg } from './errors';
 import { getChunksToLinesTransform } from './lines';
 import { RawChatEvent } from './interfaces/yt';
 import { AppState, AppRunningStats, AppUserStats, AppAggregateStats, ParsedChat } from './interfaces/state';
-import { processChatMessage } from './parser';
+import { processChatEvent } from './parser';
 import { loadCurrencyConversions, getYtCurrencyMap, currencyCodeFromYtLabel } from './currency';
 
 const APP: AppState = {
@@ -261,6 +261,9 @@ function filterChat(evt: Event) {
                 && !chat.isMembershipMessage
             ) return false;
         }
+        if (typeDropdown.value === 'raids') {
+            if (!chat.isRaidBanner) return false;
+        }
         if (searchText === '') return true;
         return (chat.textContent.toLowerCase().includes(searchText)
             || chat.userName.toLowerCase().includes(searchText)
@@ -334,7 +337,7 @@ async function processJsonFile(fileObj: File) {
 
         try {
             const msgData = JSON.parse(value);
-            processChatMessage(APP, msgData as RawChatEvent);
+            processChatEvent(APP, msgData as RawChatEvent);
         } catch(err) {
             console.error(err);
         }

@@ -105,6 +105,32 @@ export interface RawGiftMembershipsRenderer {
     timestampUsec: string;
 }
 
+export interface RawRedirectRenderer {
+    bannerMessage: RawTextData;
+    inlineActionButton?: {
+        buttonRenderer: {
+            text: RawTextData;
+            command?: {
+                urlEndpoint?: {
+                    url: string;
+                    target: string;
+                }
+                watchEndpoint?: {
+                    videoId: string;
+                }
+            }
+        }
+    }
+}
+
+export interface RawBannerRenderer {
+    actionId: string;
+    bannerType: string;
+    contents: {
+        liveChatBannerRedirectRenderer?: RawRedirectRenderer;
+    }
+}
+
 export interface RawChatEvent {
     isLive: boolean;
     videoOffsetTimeMsec?: string;
@@ -119,6 +145,11 @@ export interface RawChatEvent {
                     liveChatMembershipItemRenderer?: RawMembershipMessageRenderer;
                     liveChatSponsorshipsGiftPurchaseAnnouncementRenderer?: RawGiftMembershipsRenderer;
                     liveChatSponsorshipsGiftRedemptionAnnouncementRenderer?: RawMessageRenderer;
+                }
+            }
+            addBannerToLiveChatCommand?: {
+                bannerRenderer: {
+                    liveChatBannerRenderer: RawBannerRenderer;
                 }
             }
         }[];

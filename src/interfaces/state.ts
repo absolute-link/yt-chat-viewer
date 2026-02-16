@@ -57,6 +57,7 @@ export interface ParsedChat {
     isMembershipGift: boolean;
     numGiftsPurchased: number;
     isMembershipRedemption: boolean;
+    isRaidBanner: boolean;
     userName: string;
     textContent: string;
     htmlLine: string;

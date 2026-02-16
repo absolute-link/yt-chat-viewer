@@ -257,6 +257,18 @@ button {
     }
 }
 
+.banner.redirect-banner {
+    display: block;
+    margin-left: 5px;
+    padding: 2px 5px;
+    min-height: 20px;
+    line-height: 20px;
+    border-radius: 6px;
+    background-color: #f0f0f0;
+    color: #101010;
+    font-weight: bold;
+}
+
 #stats-shade {
     display: none;
     position: fixed;

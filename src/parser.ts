@@ -10,6 +10,7 @@ import {
     RawEmoji,
     RawSuperchatRenderer,
     RawSuperStickerRenderer,
+    RawRedirectRenderer,
     RawTextData,
     RawThumbnail,
 } from './interfaces/yt';
@@ -201,7 +202,32 @@ function makeStickerSpan(renderer: RawSuperStickerRenderer, scColour: string) {
     return html;
 }
 
-export function processChatMessage(app: AppState, msgData: RawChatEvent) {
+function makeRedirectBannerSpan(redirectRenderer: RawRedirectRenderer) {
+    const bannerCommand = redirectRenderer.inlineActionButton?.buttonRenderer.command;
+    const bannerUrl = bannerCommand?.watchEndpoint?.videoId ? `https://www.youtube.com/watch?v=${bannerCommand.watchEndpoint.videoId}` : '';
+
+    let html = `<span class="banner redirect-banner">`;
+    if (bannerUrl) {
+        html += `<a href="${bannerUrl}" target="_blank">${simplifyText(redirectRenderer.bannerMessage)}</a>`;
+    } else {
+        html += simplifyText(redirectRenderer.bannerMessage);
+    }
+    html += '</span>';
+
+    return html;
+}
+
+export function processChatEvent(app: AppState, msgData: RawChatEvent) {
+    const firstAction = msgData.replayChatItemAction?.actions[0];
+    if (firstAction?.addChatItemAction?.item) {
+        return processChatMessage(app, msgData);
+    } else if (firstAction?.addBannerToLiveChatCommand) {
+        return processChatBanner(app, msgData);
+    }
+    return false;
+}
+
+function processChatMessage(app: AppState, msgData: RawChatEvent) {
     const actionItem = msgData.replayChatItemAction?.actions[0].addChatItemAction?.item;
     if (!actionItem) return false;
 
@@ -320,8 +346,52 @@ export function processChatMessage(app: AppState, msgData: RawChatEvent) {
         isMembershipGift,
         numGiftsPurchased,
         isMembershipRedemption,
+        isRaidBanner: false,
         userName: user.name,
         textContent,
+        htmlLine: lineHtml,
+    });
+    app.renderedChatIds.add(itemId);
+
+    return true;
+}
+
+function processChatBanner(app: AppState, msgData: RawChatEvent) {
+    const bannerRenderer = msgData.replayChatItemAction?.actions[0].addBannerToLiveChatCommand?.bannerRenderer.liveChatBannerRenderer;
+    if (!bannerRenderer) return false;
+
+    const redirectRenderer = bannerRenderer.contents.liveChatBannerRedirectRenderer;
+    if (!redirectRenderer) return false;
+
+    const itemId = bannerRenderer.actionId;
+
+    // skip duplicates that can happen when there's lag while live downloading
+    if (app.renderedChatIds.has(itemId)) {
+        return false;
+    }
+
+    let lineHtml = '';
+    lineHtml += makeTimeOffsetSpan(msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '');
+    lineHtml += makeRedirectBannerSpan(redirectRenderer);
+
+    app.allChats.push({
+        itemId,
+        isMember: false,
+        isMod: false,
+        isOwner: false,
+        isSuperChat: false,
+        isSuperSticker: false,
+        superColour: '',
+        superCurrency: '',
+        superValue: 0.0,
+        isMembershipJoin: false,
+        isMembershipMessage: false,
+        isMembershipGift: false,
+        numGiftsPurchased: 0,
+        isMembershipRedemption: false,
+        isRaidBanner: true,
+        userName: '',
+        textContent: simplifyText(redirectRenderer.bannerMessage),
         htmlLine: lineHtml,
     });
     app.renderedChatIds.add(itemId);

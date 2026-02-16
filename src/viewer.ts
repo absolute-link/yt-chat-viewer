@@ -352,6 +352,9 @@ async function processJsonFile(fileObj: File) {
         }
     }
 
+    APP.allChats.sort((a, b) => {
+        return a.offsetMsec - b.offsetMsec;
+    });
     APP.filteredChats = APP.allChats.slice();
 }
 

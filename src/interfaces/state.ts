@@ -44,6 +44,7 @@ export interface AppAggregateStats {
 
 export interface ParsedChat {
     itemId: string;
+    offsetMsec: number;
     isDeleted: boolean;
     isMember: boolean;
     isMod: boolean;

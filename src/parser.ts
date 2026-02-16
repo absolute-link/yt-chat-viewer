@@ -246,6 +246,7 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     let user: User;
     let itemId = '';
+    let offsetMsec = 0;
     let textContent = '';
     let msgSpanHtml = '';
     let isSuperChat = false;
@@ -327,15 +328,17 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         return false;
     }
 
+    const offsetMsecStr = msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '0';
     const isDeleted = app.deletedChatIds.has(itemId);
 
     let lineHtml = '';
-    lineHtml += makeTimeOffsetSpan(msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '');
+    lineHtml += makeTimeOffsetSpan(offsetMsecStr);
     lineHtml += makeUserSpan(user);
     lineHtml += msgSpanHtml;
 
     app.allChats.push({
         itemId,
+        offsetMsec: parseInt(offsetMsecStr, 10) || 0,
         isDeleted,
         isMember: user.isMember,
         isMod: user.isMod,
@@ -368,6 +371,7 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
     if (!redirectRenderer) return false;
 
     const itemId = bannerRenderer.actionId;
+    const offsetMsecStr = msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '0';
 
     // skip duplicates that can happen when there's lag while live downloading
     if (app.renderedChatIds.has(itemId)) {
@@ -375,11 +379,12 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
     }
 
     let lineHtml = '';
-    lineHtml += makeTimeOffsetSpan(msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '');
+    lineHtml += makeTimeOffsetSpan(offsetMsecStr);
     lineHtml += makeRedirectBannerSpan(redirectRenderer);
 
     app.allChats.push({
         itemId,
+        offsetMsec: parseInt(offsetMsecStr, 10) || 0,
         isDeleted: false,
         isMember: false,
         isMod: false,

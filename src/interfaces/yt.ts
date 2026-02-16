@@ -152,6 +152,9 @@ export interface RawChatEvent {
                     liveChatBannerRenderer: RawBannerRenderer;
                 }
             }
+            removeChatItemAction?: {
+                targetItemId: string;
+            }
         }[];
     }
 }

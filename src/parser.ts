@@ -223,6 +223,8 @@ export function processChatEvent(app: AppState, msgData: RawChatEvent) {
         return processChatMessage(app, msgData);
     } else if (firstAction?.addBannerToLiveChatCommand) {
         return processChatBanner(app, msgData);
+    } else if (firstAction?.removeChatItemAction) {
+        return processMessageRemoval(app, msgData);
     }
     return false;
 }
@@ -235,7 +237,6 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: for each custom emote found, load it ahead of time so the browser can cache it
 
-    // TODO: we can see who the raid went to! check if this appears in VODs as well (msgData.replayChatItemAction?.actions[0].addBannerToLiveChatCommand)
     // TODO: removeChatItemByAuthorAction (does it have something above the actions? no ID within them)
     // TODO: removeChatItemAction (this does include a targetItemId)
     // TODO: maybe for deleted items, have them extremely faded
@@ -326,6 +327,8 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         return false;
     }
 
+    const isDeleted = app.deletedChatIds.has(itemId);
+
     let lineHtml = '';
     lineHtml += makeTimeOffsetSpan(msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '');
     lineHtml += makeUserSpan(user);
@@ -333,6 +336,7 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     app.allChats.push({
         itemId,
+        isDeleted,
         isMember: user.isMember,
         isMod: user.isMod,
         isOwner: user.isOwner,
@@ -376,6 +380,7 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
 
     app.allChats.push({
         itemId,
+        isDeleted: false,
         isMember: false,
         isMod: false,
         isOwner: false,
@@ -396,5 +401,20 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
     });
     app.renderedChatIds.add(itemId);
 
+    return true;
+}
+
+function processMessageRemoval(app: AppState, msgData: RawChatEvent) {
+    const targetId = msgData.replayChatItemAction?.actions[0].removeChatItemAction?.targetItemId;
+    if (!targetId) return false;
+    if (app.deletedChatIds.has(targetId)) return true;
+
+    for (const chat of app.allChats) {
+        if (chat.itemId === targetId) {
+            chat.isDeleted = true;
+        }
+    }
+
+    app.deletedChatIds.add(targetId);
     return true;
 }

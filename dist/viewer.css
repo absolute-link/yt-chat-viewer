@@ -71,6 +71,16 @@ button {
   .item:last-child {
     border-bottom: 0 none; }
 
+.item.deleted .time, .item.deleted .user {
+  opacity: 0.6; }
+
+.item.deleted .user {
+  text-decoration: line-through; }
+
+.item.deleted .msg {
+  opacity: 0.4;
+  text-decoration: line-through; }
+
 .time {
   display: block;
   padding: 2px 5px;

@@ -44,6 +44,7 @@ export interface AppAggregateStats {
 
 export interface ParsedChat {
     itemId: string;
+    isDeleted: boolean;
     isMember: boolean;
     isMod: boolean;
     isOwner: boolean;
@@ -68,6 +69,7 @@ export interface AppState {
     allChats: ParsedChat[];
     filteredChats: ParsedChat[];
     renderedChatIds: Set<string>;
+    deletedChatIds: Set<string>;
     activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;

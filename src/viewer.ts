@@ -10,6 +10,7 @@ const APP: AppState = {
     allChats: [],
     filteredChats: [],
     renderedChatIds: new Set<string>(),
+    deletedChatIds: new Set<string>(),
     activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
@@ -206,6 +207,7 @@ function clearChat() {
     APP.allChats = [];
     APP.filteredChats = [];
     APP.renderedChatIds.clear();
+    APP.deletedChatIds.clear();
     APP.activeFilter = false;
     APP.currentPage = 1;
     APP.allRunningStats = freshRunningStats();
@@ -264,6 +266,9 @@ function filterChat(evt: Event) {
         if (typeDropdown.value === 'raids') {
             if (!chat.isRaidBanner) return false;
         }
+        if (typeDropdown.value === 'removed') {
+            if (!chat.isDeleted) return false;
+        }
         if (searchText === '') return true;
         return (chat.textContent.toLowerCase().includes(searchText)
             || chat.userName.toLowerCase().includes(searchText)
@@ -289,9 +294,13 @@ function displayChat() {
 
     for (let idx = startIdx; idx < endIdx && idx < APP.filteredChats.length; idx++) {
         const itemEl = document.createElement('div');
-        itemEl.className = 'item';
-        itemEl.innerHTML = APP.filteredChats[idx].htmlLine;
 
+        itemEl.className = 'item';
+        if (APP.filteredChats[idx].isDeleted) {
+            itemEl.className += ' deleted';
+        }
+
+        itemEl.innerHTML = APP.filteredChats[idx].htmlLine;
         container.appendChild(itemEl);
     }
     updatePageIndicator();

@@ -1,5 +1,5 @@
 export interface User {
-    channelId: string;
+    channelId?: string;
     isMember: boolean;
     isMod: boolean;
     isOwner: boolean;

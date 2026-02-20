@@ -155,6 +155,9 @@ export interface RawChatEvent {
             removeChatItemAction?: {
                 targetItemId: string;
             }
+            removeChatItemByAuthorAction?: {
+                externalChannelId: string;
+            }
         }[];
     }
 }

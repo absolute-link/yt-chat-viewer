@@ -44,8 +44,10 @@ export interface AppAggregateStats {
 
 export interface ParsedChat {
     itemId: string;
+    authorId?: string;
     offsetMsec: number;
     isDeleted: boolean;
+    isTimedOut: boolean;
     isMember: boolean;
     isMod: boolean;
     isOwner: boolean;
@@ -71,6 +73,7 @@ export interface AppState {
     filteredChats: ParsedChat[];
     renderedChatIds: Set<string>;
     deletedChatIds: Set<string>;
+    authorTimeouts: Map<string, number>;
     activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;

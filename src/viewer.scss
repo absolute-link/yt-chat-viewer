@@ -86,15 +86,20 @@ button {
     }
 }
 
-.item.deleted .time, .item.deleted .user {
-    opacity: 0.6;
+.item.deleted {
+    .time, .user {
+        opacity: 0.6;
+    }
+    .msg {
+        opacity: 0.4;
+        text-decoration: line-through;
+    }
 }
-.item.deleted .user {
-    text-decoration: line-through;
-}
-.item.deleted .msg {
-    opacity: 0.4;
-    text-decoration: line-through;
+
+.item.timeout {
+    .user {
+        text-decoration: line-through;
+    }
 }
 
 .time {

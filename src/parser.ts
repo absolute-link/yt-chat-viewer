@@ -100,7 +100,7 @@ function superchatValueFromRaw(textData: RawTextData): SuperchatValue {
 
 function userFromAuthorInfo(author: AuthorInfo) {
     const user: User = {
-        channelId: author.authorExternalChannelId || '',
+        channelId: author.authorExternalChannelId,
         isMember: false,
         isMod: false,
         isOwner: false,
@@ -223,7 +223,7 @@ export function processChatEvent(app: AppState, msgData: RawChatEvent) {
         return processChatMessage(app, msgData);
     } else if (firstAction?.addBannerToLiveChatCommand) {
         return processChatBanner(app, msgData);
-    } else if (firstAction?.removeChatItemAction) {
+    } else if (firstAction?.removeChatItemAction || firstAction?.removeChatItemByAuthorAction) {
         return processMessageRemoval(app, msgData);
     }
     return false;
@@ -237,16 +237,13 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     // TODO: for each custom emote found, load it ahead of time so the browser can cache it
 
-    // TODO: removeChatItemByAuthorAction (does it have something above the actions? no ID within them)
-    // TODO: removeChatItemAction (this does include a targetItemId)
-    // TODO: maybe for deleted items, have them extremely faded
+    // TODO: can we get poll starts and poll conclusions? what about pinned chat events?
 
     // TODO: track as many stats as possible
         // first message for user (visible), number of messages from this user (on hover or out of the way), total messages, total unique users, avg messages per user, messages per minute
 
     let user: User;
     let itemId = '';
-    let offsetMsec = 0;
     let textContent = '';
     let msgSpanHtml = '';
     let isSuperChat = false;
@@ -329,7 +326,11 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
     }
 
     const offsetMsecStr = msgData.replayChatItemAction?.videoOffsetTimeMsec || msgData.videoOffsetTimeMsec || '0';
+    const offsetMsecInt = parseInt(offsetMsecStr, 10) || 0;
+
     const isDeleted = app.deletedChatIds.has(itemId);
+    const authorTimeout = app.authorTimeouts.get(user.channelId || '');
+    const isTimedOut = !!(authorTimeout && offsetMsecInt < authorTimeout);
 
     let lineHtml = '';
     lineHtml += makeTimeOffsetSpan(offsetMsecStr);
@@ -338,8 +339,10 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
 
     app.allChats.push({
         itemId,
-        offsetMsec: parseInt(offsetMsecStr, 10) || 0,
+        authorId: user.channelId,
+        offsetMsec: offsetMsecInt,
         isDeleted,
+        isTimedOut,
         isMember: user.isMember,
         isMod: user.isMod,
         isOwner: user.isOwner,
@@ -386,6 +389,7 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
         itemId,
         offsetMsec: parseInt(offsetMsecStr, 10) || 0,
         isDeleted: false,
+        isTimedOut: false,
         isMember: false,
         isMod: false,
         isOwner: false,
@@ -410,16 +414,31 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
 }
 
 function processMessageRemoval(app: AppState, msgData: RawChatEvent) {
-    const targetId = msgData.replayChatItemAction?.actions[0].removeChatItemAction?.targetItemId;
-    if (!targetId) return false;
-    if (app.deletedChatIds.has(targetId)) return true;
+    const removalOffsetMsec = parseInt(msgData.videoOffsetTimeMsec || '0', 10);
+    const targetChatId = msgData.replayChatItemAction?.actions[0].removeChatItemAction?.targetItemId;
+    const targetChannelId = msgData.replayChatItemAction?.actions[0].removeChatItemByAuthorAction?.externalChannelId;
+
+    if (!targetChatId && !targetChannelId) return false;
+    if (targetChatId && app.deletedChatIds.has(targetChatId)) return true;
 
     for (const chat of app.allChats) {
-        if (chat.itemId === targetId) {
+        if (targetChatId && chat.itemId === targetChatId) {
             chat.isDeleted = true;
+        } else if (targetChannelId && chat.authorId === targetChannelId && chat.offsetMsec <= removalOffsetMsec) {
+            chat.isDeleted = true;
+            chat.isTimedOut = true;
+            app.deletedChatIds.add(chat.itemId);
         }
     }
 
-    app.deletedChatIds.add(targetId);
+    if (targetChatId) {
+        app.deletedChatIds.add(targetChatId);
+    }
+    if (targetChannelId) {
+        const existingTimeout = app.authorTimeouts.get(targetChannelId);
+        if (!existingTimeout || existingTimeout < removalOffsetMsec) {
+            app.authorTimeouts.set(targetChannelId, removalOffsetMsec);
+        }
+    }
     return true;
 }

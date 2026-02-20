@@ -11,6 +11,7 @@ const APP: AppState = {
     filteredChats: [],
     renderedChatIds: new Set<string>(),
     deletedChatIds: new Set<string>(),
+    authorTimeouts: new Map<string, number>(),
     activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
@@ -208,6 +209,7 @@ function clearChat() {
     APP.filteredChats = [];
     APP.renderedChatIds.clear();
     APP.deletedChatIds.clear();
+    APP.authorTimeouts.clear();
     APP.activeFilter = false;
     APP.currentPage = 1;
     APP.allRunningStats = freshRunningStats();
@@ -267,7 +269,7 @@ function filterChat(evt: Event) {
             if (!chat.isRaidBanner) return false;
         }
         if (typeDropdown.value === 'removed') {
-            if (!chat.isDeleted) return false;
+            if (!chat.isDeleted && !chat.isTimedOut) return false;
         }
         if (searchText === '') return true;
         return (chat.textContent.toLowerCase().includes(searchText)
@@ -298,6 +300,9 @@ function displayChat() {
         itemEl.className = 'item';
         if (APP.filteredChats[idx].isDeleted) {
             itemEl.className += ' deleted';
+        }
+        if (APP.filteredChats[idx].isTimedOut) {
+            itemEl.className += ' timeout';
         }
 
         itemEl.innerHTML = APP.filteredChats[idx].htmlLine;

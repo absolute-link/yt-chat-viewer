@@ -195,16 +195,50 @@ button {
     height: 36px;
     vertical-align: top; }
 
-.banner.redirect-banner {
+.banner {
   display: block;
   margin-left: 5px;
-  padding: 2px 5px;
+  padding: 2px 8px;
   min-height: 20px;
   line-height: 20px;
-  border-radius: 6px;
+  border-radius: 6px; }
+
+.banner.redirect-banner {
   background-color: #f0f0f0;
   color: #101010;
   font-weight: bold; }
+
+.banner.poll-start {
+  background-color: #f0f0f0;
+  color: #101010; }
+  .banner.poll-start ul.poll-choices {
+    padding: 0 18px;
+    list-style-type: circle; }
+
+.banner.poll-end {
+  background-color: #3e3e3e;
+  color: #f1f1f1; }
+  .banner.poll-end ul.poll-choices {
+    padding: 0 16px;
+    list-style-type: disc; }
+  .banner.poll-end ul.poll-choice-results {
+    list-style-type: none;
+    padding: 0; }
+
+.banner.poll-start, .banner.poll-end {
+  padding: 5px 16px 7px 14px; }
+  .banner.poll-start .vote-count, .banner.poll-end .vote-count {
+    font-weight: bold; }
+  .banner.poll-start .poll-header, .banner.poll-start .poll-question, .banner.poll-end .poll-header, .banner.poll-end .poll-question {
+    display: block; }
+  .banner.poll-start .poll-question, .banner.poll-end .poll-question {
+    font-weight: bold; }
+  .banner.poll-start ul, .banner.poll-end ul {
+    display: inline-block;
+    margin: 0; }
+  .banner.poll-start .vote-info, .banner.poll-end .vote-info {
+    display: inline-block;
+    margin-left: 8px; }
 
 #stats-shade {
   display: none;

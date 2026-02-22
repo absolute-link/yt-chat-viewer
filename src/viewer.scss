@@ -273,16 +273,65 @@ button {
     }
 }
 
-.banner.redirect-banner {
+.banner {
     display: block;
     margin-left: 5px;
-    padding: 2px 5px;
+    padding: 2px 8px;
     min-height: 20px;
     line-height: 20px;
     border-radius: 6px;
+}
+
+.banner.redirect-banner {
     background-color: #f0f0f0;
     color: #101010;
     font-weight: bold;
+}
+
+.banner.poll-start {
+    background-color: #f0f0f0;
+    color: #101010;
+
+    ul.poll-choices {
+        padding: 0 18px;
+        list-style-type: circle;
+    }
+}
+
+.banner.poll-end {
+    background-color: #3e3e3e;
+    color: #f1f1f1;
+
+    ul.poll-choices {
+        padding: 0 16px;
+        list-style-type: disc;
+    }
+    ul.poll-choice-results {
+        list-style-type: none;
+        padding: 0;
+    }
+}
+
+.banner.poll-start, .banner.poll-end {
+    padding: 5px 16px 7px 14px;
+
+    .vote-count {
+        font-weight: bold;
+    }
+    .poll-header, .poll-question {
+        display: block;
+    }
+    .poll-question {
+        font-weight: bold;
+    }
+    ul {
+        display: inline-block;
+        margin: 0;
+    }
+    .vote-info {
+        display: inline-block;
+        margin-left: 8px;
+    }
 }
 
 #stats-shade {

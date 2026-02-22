@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import Duration from 'dayjs/plugin/duration.js';
 import { User } from './interfaces/general';
-import { AppState } from './interfaces/state';
+import { AppState, Poll } from './interfaces/state';
 import {
     AuthorInfo,
     SuperchatValue,
@@ -217,6 +217,41 @@ function makeRedirectBannerSpan(redirectRenderer: RawRedirectRenderer) {
     return html;
 }
 
+function makePollStart(poll: Poll) {
+    let html = `<span class="banner poll-start">`;
+    html += '<span class="poll-header">Poll:</span> ';
+    html += `<span class="poll-question">${poll.question}</span>`;
+    html += '<ul class="poll-choices">';
+    for (const choice of poll.choices) {
+        html += `<li>${choice.text}</li>`;
+    }
+    html += '</ul>';
+    html += '</span>';
+
+    return html;
+}
+
+function makePollEnd(poll: Poll) {
+    let html = `<span class="banner poll-end">`;
+    html += `<span class="poll-header">Poll Complete: <span class="vote-count">${poll.numVotes}</span> votes</span>`;
+    html += `<span class="poll-question">${poll.question}</span>`;
+    html += '<ul class="poll-choices">';
+    for (const choice of poll.choices) {
+        html += `<li>${choice.text}</li>`;
+    }
+    html += '</ul>';
+    html += '<ul class="poll-choice-results">';
+    for (const choice of poll.choices) {
+        const voteEstimate = Math.round((choice.percentage / 100) * poll.numVotes);
+        const roundedPercentage = Math.round(choice.percentage * 100) / 100;
+        html += `<li><span class="vote-count">${voteEstimate}</span> votes (${roundedPercentage}%)</li>`;
+    }
+    html += '</ul>';
+    html += '</span>';
+
+    return html;
+}
+
 export function processChatEvent(app: AppState, msgData: RawChatEvent) {
     const firstAction = msgData.replayChatItemAction?.actions[0];
     if (firstAction?.addChatItemAction?.item) {
@@ -225,6 +260,10 @@ export function processChatEvent(app: AppState, msgData: RawChatEvent) {
         return processChatBanner(app, msgData);
     } else if (firstAction?.removeChatItemAction || firstAction?.removeChatItemByAuthorAction) {
         return processMessageRemoval(app, msgData);
+    } else if (firstAction?.showLiveChatActionPanelAction || firstAction?.updateLiveChatPollAction) {
+        return processPollUpdate(app, msgData);
+    } else if (firstAction?.closeLiveChatActionPanelAction || firstAction?.removeBannerForLiveChatCommand) {
+        return processPollCompletion(app, msgData);
     }
     return false;
 }
@@ -233,13 +272,13 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
     const actionItem = msgData.replayChatItemAction?.actions[0].addChatItemAction?.item;
     if (!actionItem) return false;
 
-    // TODO: enter absolute timestamps, and allow choosing the type to display
+    // TODO: enter absolute timestamps, and allow choosing the type to display (or maybe just have them on hover)
 
     // TODO: for each custom emote found, load it ahead of time so the browser can cache it
 
-    // TODO: can we get poll starts and poll conclusions? what about pinned chat events?
+    // TODO: can we see pinned chat events?
 
-    // TODO: track as many stats as possible
+    // TODO: track some user-specific stats
         // first message for user (visible), number of messages from this user (on hover or out of the way), total messages, total unique users, avg messages per user, messages per minute
 
     let user: User;
@@ -357,6 +396,8 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         numGiftsPurchased,
         isMembershipRedemption,
         isRaidBanner: false,
+        isPollStart: false,
+        isPollEnd: false,
         userName: user.name,
         textContent,
         htmlLine: lineHtml,
@@ -404,11 +445,148 @@ function processChatBanner(app: AppState, msgData: RawChatEvent) {
         numGiftsPurchased: 0,
         isMembershipRedemption: false,
         isRaidBanner: true,
+        isPollStart: false,
+        isPollEnd: false,
         userName: '',
         textContent: simplifyText(redirectRenderer.bannerMessage),
         htmlLine: lineHtml,
     });
     app.renderedChatIds.add(itemId);
+
+    return true;
+}
+
+function processPollUpdate(app: AppState, msgData: RawChatEvent) {
+    const firstAction = msgData.replayChatItemAction?.actions[0];
+    if (!firstAction) return false;
+
+    const pollRenderer = firstAction.showLiveChatActionPanelAction?.panelToShow.liveChatActionPanelRenderer.contents.pollRenderer
+        || firstAction.updateLiveChatPollAction?.pollToUpdate.pollRenderer;
+    if (!pollRenderer) return false;
+
+    const offsetMsecStr = msgData.videoOffsetTimeMsec || '0';
+    const actionOffsetMsec = parseInt(offsetMsecStr, 10);
+
+    const pollId = pollRenderer.liveChatPollId;
+    const pollHeader = pollRenderer.header.pollHeaderRenderer;
+    const pollMeta = simplifyText(pollHeader.metadataText);
+
+    const numVotesMatch = pollMeta.match(/([0-9,]+) votes/i);
+    const numVotes = (numVotesMatch) ? parseInt(numVotesMatch[1].replace(/,/g, ''), 10) : 0;
+
+    const existingPoll = app.polls.get(pollId);
+    if (existingPoll && existingPoll.lastUpdatedMsec <= actionOffsetMsec) {
+        existingPoll.choices = pollRenderer.choices.map((choice) => ({
+            text: simplifyText(choice.text),
+            percentage: choice.voteRatio * 100,
+        }));
+        existingPoll.numVotes = numVotes;
+        existingPoll.lastUpdatedMsec = actionOffsetMsec;
+        return true;
+    } else if (existingPoll) {
+        return false;
+    }
+
+    const newPoll: Poll = {
+        id: pollId,
+        lastUpdatedMsec: actionOffsetMsec,
+        completed: false,
+        question: simplifyText(pollHeader.pollQuestion),
+        numVotes: numVotes,
+        choices: pollRenderer.choices.map((choice) => ({
+            text: simplifyText(choice.text),
+            percentage: choice.voteRatio * 100,
+        })),
+    };
+    app.polls.set(pollId, newPoll);
+
+    const choicesText = pollRenderer.choices.reduce((acc, choice) => {
+        return `${acc}${simplifyText(choice.text)}\n`;
+    }, '');
+
+    let lineHtml = '';
+    lineHtml += makeTimeOffsetSpan(offsetMsecStr);
+    lineHtml += makePollStart(newPoll);
+
+    app.allChats.push({
+        itemId: pollId,
+        offsetMsec: actionOffsetMsec,
+        isDeleted: false,
+        isTimedOut: false,
+        isMember: false,
+        isMod: false,
+        isOwner: false,
+        isSuperChat: false,
+        isSuperSticker: false,
+        superColour: '',
+        superCurrency: '',
+        superValue: 0.0,
+        isMembershipJoin: false,
+        isMembershipMessage: false,
+        isMembershipGift: false,
+        numGiftsPurchased: 0,
+        isMembershipRedemption: false,
+        isRaidBanner: false,
+        isPollStart: true,
+        isPollEnd: false,
+        userName: '',
+        textContent: `${simplifyText(pollHeader.pollQuestion)}\n${choicesText}`,
+        htmlLine: lineHtml,
+    });
+
+    return true;
+}
+
+function processPollCompletion(app: AppState, msgData: RawChatEvent) {
+    const firstAction = msgData.replayChatItemAction?.actions[0];
+    if (!firstAction) return false;
+
+    const pollId = firstAction.closeLiveChatActionPanelAction?.targetPanelId
+        || firstAction.removeBannerForLiveChatCommand?.targetActionId;
+    if (!pollId) return false;
+
+    const existingPoll = app.polls.get(pollId);
+    if (!existingPoll) return false;
+    if (existingPoll.completed) return false;
+
+    existingPoll.completed = true;
+    existingPoll.choices.sort((a, b) => b.percentage - a.percentage);
+
+    const offsetMsecStr = msgData.videoOffsetTimeMsec || '0';
+    const actionOffsetMsec = parseInt(offsetMsecStr, 10);
+    const choicesText = existingPoll.choices.reduce((acc, choice) => {
+        return `${acc}${choice.text}\n`;
+    }, '');
+
+    let lineHtml = '';
+    lineHtml += makeTimeOffsetSpan(offsetMsecStr);
+    lineHtml += makePollEnd(existingPoll);
+
+    app.allChats.push({
+        itemId: pollId,
+        offsetMsec: actionOffsetMsec,
+        isDeleted: false,
+        isTimedOut: false,
+        isMember: false,
+        isMod: false,
+        isOwner: false,
+        isSuperChat: false,
+        isSuperSticker: false,
+        superColour: '',
+        superCurrency: '',
+        superValue: 0.0,
+        isMembershipJoin: false,
+        isMembershipMessage: false,
+        isMembershipGift: false,
+        numGiftsPurchased: 0,
+        isMembershipRedemption: false,
+        isRaidBanner: false,
+        isPollStart: false,
+        isPollEnd: true,
+        userName: '',
+        textContent: `${existingPoll.question}\n${choicesText}`,
+        htmlLine: lineHtml,
+    });
 
     return true;
 }

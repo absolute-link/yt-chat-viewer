@@ -1,7 +1,7 @@
 import { setErrorMsg, clearErrorMsg } from './errors';
 import { getChunksToLinesTransform } from './lines';
 import { RawChatEvent } from './interfaces/yt';
-import { AppState, AppRunningStats, AppUserStats, AppAggregateStats, ParsedChat } from './interfaces/state';
+import { AppState, AppRunningStats, AppUserStats, AppAggregateStats, ParsedChat, Poll } from './interfaces/state';
 import { processChatEvent } from './parser';
 import { loadCurrencyConversions, getYtCurrencyMap, currencyCodeFromYtLabel } from './currency';
 
@@ -12,6 +12,7 @@ const APP: AppState = {
     renderedChatIds: new Set<string>(),
     deletedChatIds: new Set<string>(),
     authorTimeouts: new Map<string, number>(),
+    polls: new Map<string, Poll>(),
     activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
@@ -210,6 +211,7 @@ function clearChat() {
     APP.renderedChatIds.clear();
     APP.deletedChatIds.clear();
     APP.authorTimeouts.clear();
+    APP.polls.clear();
     APP.activeFilter = false;
     APP.currentPage = 1;
     APP.allRunningStats = freshRunningStats();
@@ -265,8 +267,8 @@ function filterChat(evt: Event) {
                 && !chat.isMembershipMessage
             ) return false;
         }
-        if (typeDropdown.value === 'raids') {
-            if (!chat.isRaidBanner) return false;
+        if (typeDropdown.value === 'events') {
+            if (!chat.isRaidBanner && !chat.isPollStart && !chat.isPollEnd) return false;
         }
         if (typeDropdown.value === 'removed') {
             if (!chat.isDeleted && !chat.isTimedOut) return false;

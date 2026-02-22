@@ -62,9 +62,25 @@ export interface ParsedChat {
     numGiftsPurchased: number;
     isMembershipRedemption: boolean;
     isRaidBanner: boolean;
+    isPollStart: boolean;
+    isPollEnd: boolean;
     userName: string;
     textContent: string;
     htmlLine: string;
+}
+
+export interface PollChoice {
+    text: string;
+    percentage: number;
+}
+
+export interface Poll {
+    id: string;
+    lastUpdatedMsec: number;
+    completed: boolean;
+    question: string;
+    numVotes: number;
+    choices: PollChoice[];
 }
 
 export interface AppState {
@@ -74,6 +90,7 @@ export interface AppState {
     renderedChatIds: Set<string>;
     deletedChatIds: Set<string>;
     authorTimeouts: Map<string, number>;
+    polls: Map<string, Poll>;
     activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;

@@ -131,6 +131,22 @@ export interface RawBannerRenderer {
     }
 }
 
+export interface RawPollRenderer {
+    liveChatPollId: string;
+    header: {
+        pollHeaderRenderer: {
+            pollQuestion: RawTextData;
+            metadataText: RawTextData;
+        }
+    }
+    choices: {
+        text: RawTextData;
+        selected: boolean;
+        voteRatio: number;
+        votePercentage: RawTextData;
+    }[];
+}
+
 export interface RawChatEvent {
     isLive: boolean;
     videoOffsetTimeMsec?: string;
@@ -151,6 +167,27 @@ export interface RawChatEvent {
                 bannerRenderer: {
                     liveChatBannerRenderer: RawBannerRenderer;
                 }
+            }
+            showLiveChatActionPanelAction?: {
+                panelToShow: {
+                    liveChatActionPanelRenderer: {
+                        id: string;
+                        contents: {
+                            pollRenderer?: RawPollRenderer;
+                        }
+                    }
+                }
+            }
+            updateLiveChatPollAction?: {
+                pollToUpdate: {
+                    pollRenderer: RawPollRenderer;
+                }
+            }
+            closeLiveChatActionPanelAction?: {
+                targetPanelId: string;
+            }
+            removeBannerForLiveChatCommand?: {
+                targetActionId: string;
             }
             removeChatItemAction?: {
                 targetItemId: string;

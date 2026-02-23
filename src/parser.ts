@@ -172,10 +172,15 @@ function makeGiftMessageSpan(textData: RawTextData) {
     return html;
 }
 
-function makeMemberMessageSpan(lengthText: RawTextData, message: RawTextData) {
-    let html = `<span class="msg membership-message">`;
+function makeMemberMessageSpan(lengthText: RawTextData, tierText: RawTextData, message: RawTextData | string) {
+    const msgText = simplifyText(message);
+    const mainClass = (msgText) ? 'msg membership-message' : 'msg membership-message empty';
+    let html = `<span class="${mainClass}">`;
     html += `<span class="mem-length">${shortenMembershipLength(lengthText)}</span>`;
-    html += `<span class="text">${simplifyText(message)}</span>`;
+    html += `<span class="mem-tier">${simplifyText(tierText)}</span>`;
+    if (msgText) {
+        html += `<span class="text">${msgText}</span>`;
+    }
     html += '</span>';
 
     return html;
@@ -317,9 +322,12 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         itemId = renderer.id;
         user = userFromAuthorInfo(renderer);
         if (renderer.message) {
-            // TODO: what does it look like if someone sends one without a message?
-            msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.message);
-            textContent = simplifyText(renderer.message);
+            msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.headerSubtext, renderer.message);
+            textContent = `${simplifyText(renderer.headerSubtext)} ${simplifyText(renderer.message)}`;
+            isMembershipMessage = true;
+        } else if (renderer.empty) {
+            msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.headerSubtext, '');
+            textContent = simplifyText(renderer.headerSubtext);
             isMembershipMessage = true;
         } else {
             msgSpanHtml += makeMessageSpan(renderer.headerSubtext, ['membership-join', 'system-message']);

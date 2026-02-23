@@ -90,6 +90,7 @@ export interface RawSuperStickerRenderer extends AuthorInfo {
 export interface RawMembershipMessageRenderer extends RawMessageRenderer {
     headerPrimaryText: RawTextData; // "Member for 1 month"
     headerSubtext: RawTextData; // "[Member Tier name]" or "Welcome to [Member Tier name]!"
+    empty?: boolean;
 }
 
 export interface RawGiftMembershipsHeaderRenderer extends AuthorInfo {

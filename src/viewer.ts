@@ -447,7 +447,9 @@ async function processJsonFile(fileObj: File) {
         if (!filePicker.files || !filePicker.files.length) return;
 
         const file = filePicker.files[0];
-        if (file.type !== 'application/json') return setErrorMsg('Error: Please choose a JSON file');
+        if (file.type && file.type !== 'application/json') {
+            return setErrorMsg('Error: Please choose a JSON file');
+        }
 
         loadingIcon.style.display = 'block';
         await processJsonFile(file);
@@ -472,7 +474,9 @@ async function processJsonFile(fileObj: File) {
             if (!response.ok) throw new Error('Failed to load chat file from URL');
 
             const blob = await response.blob();
-            if (blob.type !== 'application/json') throw new Error('Error: Please provide a JSON file');
+            if (blob.type && blob.type !== 'application/json') {
+                throw new Error('Error: Please provide a JSON file');
+            }
 
             await processJsonFile(new File([blob], 'chat.json', { type: 'application/json' }));
 

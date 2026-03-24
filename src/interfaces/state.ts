@@ -1,4 +1,4 @@
-import { YtCurrencyMap, CurrencyConversions } from './general';
+import { YtCurrencyMap, CurrencyConversions, CachedEmote } from './general';
 
 export interface AppRunningStats {
     numChatMessages: number;
@@ -91,6 +91,7 @@ export interface AppState {
     deletedChatIds: Set<string>;
     authorTimeouts: Map<string, number>;
     polls: Map<string, Poll>;
+    cachedEmotes: Map<string, CachedEmote>;
     activeFilter: boolean;
     currentPage: number;
     limitPerPage: number;

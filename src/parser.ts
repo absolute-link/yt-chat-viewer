@@ -14,6 +14,7 @@ import {
     RawTextData,
     RawThumbnail,
 } from './interfaces/yt';
+import { cacheEmote, getEmoteLocalUrl } from './emotes';
 
 dayjs.extend(Duration);
 
@@ -53,14 +54,33 @@ function smallestThumbnail(thumbnails: RawThumbnail[]) {
     return smallest;
 }
 
+async function preCacheEmotes(app: AppState, textData?: RawTextData | string) {
+    if (typeof textData === 'string') return;
+    if (!textData || !textData.runs) return;
+
+    for (const run of textData.runs) {
+        if (!run.emoji || !run.emoji.isCustomEmoji) continue;
+        if (app.cachedEmotes.has(run.emoji.emojiId)) continue;
+
+        const emoji = run.emoji;
+        const shortcutName = emoji.shortcuts[0] || '';
+        const originalUrl = smallestThumbnail(emoji.image.thumbnails)?.url || '';
+
+        const cachedEmote = await cacheEmote(emoji.emojiId, shortcutName, originalUrl);
+        app.cachedEmotes.set(emoji.emojiId, cachedEmote);
+    }
+}
+
 function makeEmojiHtml(emoji: RawEmoji) {
     if (emoji.isCustomEmoji) {
-        const thumbnail = smallestThumbnail(emoji.image.thumbnails);
-        if (thumbnail) {
-            return `<img class="emoji" src="${thumbnail.url}" alt="${emoji.shortcuts[0] || ''}">`;
-        } else {
-            return `<span class="emoji-text">${emoji.shortcuts[0] || ''}</span>`;
+        const shortcutText = emoji.shortcuts[0] || '';
+
+        const localUrl = getEmoteLocalUrl(emoji.emojiId);
+        if (localUrl) {
+            return `<img class="emoji" src="${localUrl}" alt="${shortcutText}" title="${shortcutText}">`;
         }
+
+        return `<span class="emoji-text">${shortcutText}</span>`;
     }
     return emoji.emojiId;
 }
@@ -257,7 +277,7 @@ function makePollEnd(poll: Poll) {
     return html;
 }
 
-export function processChatEvent(app: AppState, msgData: RawChatEvent) {
+export async function processChatEvent(app: AppState, msgData: RawChatEvent) {
     const firstAction = msgData.replayChatItemAction?.actions[0];
     if (firstAction?.addChatItemAction?.item) {
         return processChatMessage(app, msgData);
@@ -273,13 +293,15 @@ export function processChatEvent(app: AppState, msgData: RawChatEvent) {
     return false;
 }
 
-function processChatMessage(app: AppState, msgData: RawChatEvent) {
+async function processChatMessage(app: AppState, msgData: RawChatEvent) {
     const actionItem = msgData.replayChatItemAction?.actions[0].addChatItemAction?.item;
     if (!actionItem) return false;
 
-    // TODO: enter absolute timestamps, and allow choosing the type to display (or maybe just have them on hover)
+    // TODO: make broken images visually distinct, so the :_text: is still visibly a failed emoji
 
-    // TODO: for each custom emote found, load it ahead of time so the browser can cache it
+    // TODO: create a way to manually replace broken emotes (e.g. ones that don't exist anymore, but user might have the archived files for, and can load them in)
+
+    // TODO: enter absolute timestamps, and allow choosing the type to display (or maybe just have them on hover)
 
     // TODO: can we see pinned chat events?
 
@@ -322,6 +344,7 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         itemId = renderer.id;
         user = userFromAuthorInfo(renderer);
         if (renderer.message) {
+            await preCacheEmotes(app, renderer.message);
             msgSpanHtml += makeMemberMessageSpan(renderer.headerPrimaryText, renderer.headerSubtext, renderer.message);
             textContent = `${simplifyText(renderer.headerSubtext)} ${simplifyText(renderer.message)}`;
             isMembershipMessage = true;
@@ -343,6 +366,7 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         superCurrency = currencyLabel;
         isSuperChat = true;
 
+        await preCacheEmotes(app, renderer.message);
         user = userFromAuthorInfo(renderer);
         msgSpanHtml += makeSuperChatSpan(renderer, superColour);
         textContent = simplifyText(renderer.message || '');
@@ -361,6 +385,8 @@ function processChatMessage(app: AppState, msgData: RawChatEvent) {
         const renderer = actionItem.liveChatTextMessageRenderer;
         itemId = renderer.id;
         user = userFromAuthorInfo(renderer);
+
+        await preCacheEmotes(app, renderer.message);
         msgSpanHtml += makeMessageSpan(renderer.message);
         textContent = simplifyText(renderer.message || '');
     } else {

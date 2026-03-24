@@ -1,5 +1,6 @@
 import { setErrorMsg, clearErrorMsg } from './errors';
 import { getChunksToLinesTransform } from './lines';
+import { CachedEmote } from './interfaces/general';
 import { RawChatEvent } from './interfaces/yt';
 import { AppState, AppRunningStats, AppUserStats, AppAggregateStats, ParsedChat, Poll } from './interfaces/state';
 import { processChatEvent } from './parser';
@@ -13,6 +14,7 @@ const APP: AppState = {
     deletedChatIds: new Set<string>(),
     authorTimeouts: new Map<string, number>(),
     polls: new Map<string, Poll>(),
+    cachedEmotes: new Map<string, CachedEmote>(),
     activeFilter: false,
     currentPage: 1,
     limitPerPage: 1500,
@@ -212,6 +214,7 @@ function clearChat() {
     APP.deletedChatIds.clear();
     APP.authorTimeouts.clear();
     APP.polls.clear();
+    APP.cachedEmotes.clear();
     APP.activeFilter = false;
     APP.currentPage = 1;
     APP.allRunningStats = freshRunningStats();
@@ -353,7 +356,7 @@ async function processJsonFile(fileObj: File) {
 
         try {
             const msgData = JSON.parse(value);
-            processChatEvent(APP, msgData as RawChatEvent);
+            await processChatEvent(APP, msgData as RawChatEvent);
         } catch(err) {
             console.error(err);
         }

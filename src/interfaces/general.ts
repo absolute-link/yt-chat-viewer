@@ -7,6 +7,21 @@ export interface User {
     name: string;
 }
 
+export interface EmoteDbRow {
+    id: string;
+    shortcutName: string;
+    originalUrl: string;
+    blob: Blob;
+}
+
+export interface CachedEmote {
+    id: string;
+    shortcutName: string;
+    originalUrl: string;
+    localUrl?: string;
+    fetchError?: string;
+}
+
 export interface YtCurrencyMap {
     [key: string]: string;
 }
